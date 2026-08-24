@@ -37,7 +37,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "test": "pnpm build && node --test dist/index.spec.js",
-    "release": "release-it -VV --dry-run",
+    "release": "release-it -VV --dry-run --ci",
     "release:ci": "release-it --ci",
     "worktree:add": "bash ./scripts/add-worktree.sh"
   },
