@@ -3,6 +3,18 @@
 This repository is public. Never commit secrets, credentials, private customer
 information, contracts, pricing, or commercially sensitive ClickUp content.
 
+## Skills
+
+Use Singleton SD skills from `ai-plattform-skills` (see `.skills/manifest.json`):
+
+- `engineering/git-conventions`
+- `engineering/isolated-worktree`
+- `engineering/repo-init`
+- `engineering/implement-feature`
+- `operations/task-driven-development`
+
+Do not copy skill files into this repository.
+
 ## Engineering workflow
 
 - GitHub Issues are the engineering source of truth in this repository.
@@ -14,6 +26,7 @@ information, contracts, pricing, or commercially sensitive ClickUp content.
 - Branches use `<type>/<issue-number>-<kebab-title>`.
 - Work in sibling worktrees created from current `origin/main`; never edit
   directly on `main`.
+- Prefer `pnpm worktree:add --type feat --issue N --slug kebab-title`.
 - PR bodies must use `Closes #N`; humans merge.
 - Remove and prune worktrees after merge.
 
@@ -28,9 +41,9 @@ information, contracts, pricing, or commercially sensitive ClickUp content.
 
 ## Stack and quality gate
 
-- Node.js 22.12+ and pnpm.
-- Strict TypeScript.
+- Node.js 22.12+ and pnpm 11.22.
+- Strict TypeScript (`NodeNext`).
 - Deterministic output: same input + same render configuration → identical
   framebuffer bytes.
-- Run format, lint, typecheck, and tests before pushing (scripts land with the
-  bootstrap issue).
+- Before pushing: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`,
+  `pnpm test`.
