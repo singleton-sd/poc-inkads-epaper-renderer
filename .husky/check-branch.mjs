@@ -22,7 +22,7 @@ const isValidBranchName =
   branchName === 'design' ||
   branchName === 'develop' ||
   /^release\/v\d+\.\d+\.\d+$/.test(branchName) ||
-  new RegExp(`^(?:${BRANCH_TYPES})\\/\\d+(-[\\w.]+)*$`).test(branchName);
+  new RegExp(`^(?:${BRANCH_TYPES})\\/\\d+-[a-z0-9]+(?:-[a-z0-9]+)*$`).test(branchName);
 
 if (!isValidBranchName) {
   console.error(

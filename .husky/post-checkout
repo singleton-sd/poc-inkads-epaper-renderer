@@ -16,19 +16,16 @@ set -e
 
 if [ "$VALID" -ne 0 ]; then
   echo "$OUTPUT"
-  echo "Invalid branch name: '$BRANCH_NAME'. Rolling back to '$PREVIOUS_BRANCH'."
+  echo "Invalid branch name: '$BRANCH_NAME'. Switching back to '$PREVIOUS_BRANCH'."
+  echo "The invalid branch was kept so local commits are not discarded."
+  echo "Rename it before continuing:"
+  echo "  git branch -m '$BRANCH_NAME' <type>/<issue>-<kebab-title>"
 
   if git checkout "$PREVIOUS_BRANCH"; then
     echo "Switched back to '$PREVIOUS_BRANCH'."
   else
     echo "Failed to switch back. Handle manually."
     exit 1
-  fi
-
-  if git branch -D "$BRANCH_NAME"; then
-    echo "Deleted invalid branch: '$BRANCH_NAME'."
-  else
-    echo "Failed to delete '$BRANCH_NAME'. Delete it manually."
   fi
 
   exit 1

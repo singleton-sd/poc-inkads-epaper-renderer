@@ -38,7 +38,8 @@ console.log('Checking ticket number on commit message');
 try {
   const commitMessage = readFileSync(commitMessageFilePath, 'utf8');
 
-  if (commitMessage.includes('Release')) {
+  const firstLine = commitMessage.split(/\r?\n/, 1)[0] ?? '';
+  if (/^chore: Release v\d+\.\d+\.\d+$/.test(firstLine)) {
     console.info('Skipping ticket number as this is a release commit');
     process.exit(0);
   }

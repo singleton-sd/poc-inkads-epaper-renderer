@@ -9,4 +9,8 @@ describe('createRendererStub', () => {
     assert.equal(stub.packageName, RENDERER_PACKAGE_NAME);
     assert.equal(stub.version, '0.0.0');
   });
+
+  it('uses the default version', () => {
+    assert.equal(createRendererStub().version, '0.0.0');
+  });
 });

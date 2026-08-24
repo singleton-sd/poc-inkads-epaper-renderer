@@ -4,13 +4,15 @@ on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   title:
     runs-on: ubuntu-latest
     name: PR title
     steps:
-      - uses: actions/checkout@v4
-
       - name: Validate PR title
         env:
           TITLE: ${{ github.event.pull_request.title }}

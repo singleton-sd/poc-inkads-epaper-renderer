@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ALLOWED_TYPES='feat|fix|docs|chore|refactor|test|ci|build|perf|style|revert'
+
 usage() {
   cat <<'EOF'
 Usage:
@@ -50,8 +52,23 @@ if [[ -z "$type" || -z "$issue" || -z "$slug" ]]; then
   exit 1
 fi
 
+if ! [[ "$type" =~ ^(${ALLOWED_TYPES})$ ]]; then
+  echo "--type must be one of: ${ALLOWED_TYPES//|/, }" >&2
+  exit 1
+fi
+
 if ! [[ "$issue" =~ ^[0-9]+$ ]]; then
   echo "--issue must be a GitHub issue number" >&2
+  exit 1
+fi
+
+if ! [[ "$slug" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+  echo "--slug must be kebab-case (lowercase letters, digits, hyphens)" >&2
+  exit 1
+fi
+
+if [[ "$slug" == *".."* || "$slug" == *"/"* || "$slug" == *"\\"* ]]; then
+  echo "--slug must not contain path separators or '..'" >&2
   exit 1
 fi
 
