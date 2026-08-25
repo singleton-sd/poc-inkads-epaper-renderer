@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   release:
-    if: ${{ github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore: Release') }}
+    if: "${{ github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore: Release') }}"
     runs-on: ubuntu-latest
     name: release-it
     steps:
