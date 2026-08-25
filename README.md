@@ -14,9 +14,8 @@ packed framebuffer bytes only.
 
 ## Status
 
-Proof of concept. Public API and the first Waveshare 7.5″ black-and-white
-profile are under construction — see
-[GitHub Issues](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues).
+Proof of concept. Display profiles and the Waveshare 7.5″ B/W target are
+available; crop, dither, and packing land in issues #3–#5.
 
 Package name: `@singleton-sd/inkads-epaper-renderer` (private until publish is
 enabled).
@@ -89,14 +88,27 @@ gh release list
 The Release page should list the tag under
 https://github.com/singleton-sd/poc-inkads-epaper-renderer/releases.
 
-## Initial display profile
+## Display profiles
 
-| Field       | Value              |
+Each hardware panel is a **display profile** with a stable id, fixed resolution,
+and expected packed framebuffer size. The renderer pipeline takes a profile —
+not arbitrary width/height — so cloud, preview, and firmware stay aligned.
+
+| Field       | `waveshare-7.5-bw` |
 | ----------- | ------------------ |
 | Panel       | Waveshare 7.5″ B/W |
-| Resolution  | 800×480            |
+| Resolution  | 800×480 (5:3)      |
 | Depth       | 1 bit per pixel    |
 | Packed size | 48,000 bytes       |
+
+```ts
+import { getDisplayProfile, listDisplayProfiles } from '@singleton-sd/inkads-epaper-renderer';
+
+listDisplayProfiles(); // [waveshare-7.5-bw, …]
+getDisplayProfile('waveshare-7.5-bw');
+```
+
+Future panels (including colour, issue #9) add new ids to the registry.
 
 ## Related repositories
 
