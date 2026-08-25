@@ -57,8 +57,8 @@ if ! [[ "$type" =~ ^(${ALLOWED_TYPES})$ ]]; then
   exit 1
 fi
 
-if ! [[ "$issue" =~ ^[0-9]+$ ]]; then
-  echo "--issue must be a GitHub issue number" >&2
+if ! [[ "$issue" =~ ^[1-9][0-9]*$ ]]; then
+  echo "--issue must be a positive GitHub issue number" >&2
   exit 1
 fi
 

@@ -12,7 +12,7 @@ const getGitBranch = () => {
 };
 
 const getTicketNumberFromBranch = (branchName) => {
-  const match = branchName.match(new RegExp(`^(?:${BRANCH_TYPES})\\/(\\d+)(?:-|$)`));
+  const match = branchName.match(new RegExp(`^(?:${BRANCH_TYPES})\\/([1-9][0-9]*)(?:-|$)`));
   return match ? `#${match[1]}` : null;
 };
 
