@@ -67,6 +67,28 @@ pnpm release:ci   # only from main; prefer the Actions workflow
 
 Never hand-edit `package.json` version.
 
+### Recovery: tag exists, GitHub Release missing
+
+If CI pushed a semver tag but failed while creating the GitHub Release, **do not**
+rerun `pnpm release:ci` — that can cut another empty version bump.
+
+Create the missing Release from the existing tag instead:
+
+```sh
+# Example for tag 0.0.3
+gh release create 0.0.3 --title "v0.0.3" --generate-notes --verify-tag
+```
+
+Verify:
+
+```sh
+gh release view 0.0.3
+gh release list
+```
+
+The Release page should list the tag under
+https://github.com/singleton-sd/poc-inkads-epaper-renderer/releases.
+
 ## Initial display profile
 
 | Field       | Value              |
