@@ -53,8 +53,10 @@ Semantic versions are produced by `release-it` from Conventional Commits.
 
 On every push to `main` (except an existing `chore: Release …` commit), GitHub
 Actions runs `pnpm release:ci`. That bumps the version, updates `CHANGELOG.md`,
-pushes a `vX.Y.Z` tag, and creates a GitHub Release. npm publish stays off for
+pushes a semver tag, and creates a GitHub Release. npm publish stays off for
 now.
+
+Requires `release-it` ≥ 19.0.4 (Octokit logger fix for GitHub Releases).
 
 Locally:
 
