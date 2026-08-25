@@ -36,9 +36,10 @@ Install hooks via `pnpm install` (`prepare` → husky).
 ## Releases
 
 `release-it` bumps semver from Conventional Commits and writes `CHANGELOG.md`.
-`pnpm release` is a dry-run; `pnpm release:ci` is for CI. Do not edit the
-version in `package.json` by hand. npm publish is disabled until the package
-is ready for a registry.
+Merges to `main` trigger `.github/workflows/release.yml`, which runs
+`pnpm release:ci` (tag + GitHub Release). `pnpm release` is a local dry-run.
+Do not edit the version in `package.json` by hand. npm publish is disabled
+until the package is ready for a registry.
 
 ## Scope
 
