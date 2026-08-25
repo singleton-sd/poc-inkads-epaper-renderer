@@ -53,8 +53,10 @@ Semantic versions are produced by `release-it` from Conventional Commits.
 
 On every push to `main` (except an existing `chore: Release …` commit), GitHub
 Actions runs `pnpm release:ci`. That bumps the version, updates `CHANGELOG.md`,
-pushes a `vX.Y.Z` tag, and creates a GitHub Release. npm publish stays off for
+pushes a semver tag, and creates a GitHub Release. npm publish stays off for
 now.
+
+Requires `release-it` ≥ 19.0.4 (Octokit logger fix for GitHub Releases).
 
 Locally:
 
@@ -64,6 +66,28 @@ pnpm release:ci   # only from main; prefer the Actions workflow
 ```
 
 Never hand-edit `package.json` version.
+
+### Recovery: tag exists, GitHub Release missing
+
+If CI pushed a semver tag but failed while creating the GitHub Release, **do not**
+rerun `pnpm release:ci` — that can cut another empty version bump.
+
+Create the missing Release from the existing tag instead:
+
+```sh
+# Example for tag 0.0.3
+gh release create 0.0.3 --title "v0.0.3" --generate-notes --verify-tag
+```
+
+Verify:
+
+```sh
+gh release view 0.0.3
+gh release list
+```
+
+The Release page should list the tag under
+https://github.com/singleton-sd/poc-inkads-epaper-renderer/releases.
 
 ## Initial display profile
 

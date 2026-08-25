@@ -45,6 +45,7 @@ jobs:
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_AUTHOR_NAME: github-actions[bot]
           GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
           GIT_COMMITTER_NAME: github-actions[bot]
@@ -55,31 +56,10 @@ jobs:
           git remote set-url origin \
             "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
-          sync_main() {
-            git fetch origin main
-            git checkout -B main origin/main
-          }
+          git fetch origin main --tags
+          git checkout -B main origin/main
 
-          sync_main
-
-          attempt=1
-          max_attempts=3
-          while [ "$attempt" -le "$max_attempts" ]; do
-            set +e
-            pnpm release:ci
-            status=$?
-            set -e
-
-            if [ "$status" -eq 0 ]; then
-              exit 0
-            fi
-
-            if [ "$attempt" -eq "$max_attempts" ]; then
-              echo "release:ci failed after ${max_attempts} attempts."
-              exit "$status"
-            fi
-
-            echo "release:ci failed (attempt ${attempt}); syncing origin/main and retrying."
-            sync_main
-            attempt=$((attempt + 1))
-          done
+          # Do not retry failed runs: commit/tag/push may already have
+          # succeeded while GitHub release creation failed, and retrying
+          # would cut another empty version bump.
+          pnpm release:ci
