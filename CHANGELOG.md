@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.4](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.0.3...0.0.4) (2026-08-25)
+
+### Bug Fixes
+
+* Make GitHub Releases work with release-it ([60084fe](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/60084fe9f10f62d86f1623fd4cbd817b4b325cf1))
+
 ## [0.0.3](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.0.3..0.0.2) (2026-08-25)
 
 ## [0.0.2](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.0.2..0.0.1) (2026-08-25)
