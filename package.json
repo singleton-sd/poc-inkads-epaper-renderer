@@ -8,8 +8,52 @@
     "node": ">=22.12.0"
   },
   "packageManager": "pnpm@11.22.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/singleton-sd/poc-inkads-epaper-renderer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues"
+  },
+  "homepage": "https://github.com/singleton-sd/poc-inkads-epaper-renderer#readme",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
-    "build": "echo \"Bootstrap pending — see GitHub Issues\" && exit 1",
-    "test": "echo \"Bootstrap pending — see GitHub Issues\" && exit 1"
+    "prepare": "husky",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "test": "pnpm build && node --test dist/index.spec.js",
+    "release": "release-it -VV --dry-run --ci",
+    "release:ci": "release-it --ci",
+    "worktree:add": "bash ./scripts/add-worktree.sh"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@eslint/js": "^9.33.0",
+    "@release-it/conventional-changelog": "^10.0.1",
+    "@types/node": "^22.17.2",
+    "conventional-changelog-conventionalcommits": "^8.0.0",
+    "eslint": "^9.33.0",
+    "globals": "^16.3.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.6.2",
+    "release-it": "^18.1.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.1"
   }
 }

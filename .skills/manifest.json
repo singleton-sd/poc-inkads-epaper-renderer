@@ -1,0 +1,10 @@
+{
+  "skills": [
+    "git-conventions",
+    "isolated-worktree",
+    "implement-feature",
+    "repo-init",
+    "task-driven-development"
+  ],
+  "agents": ["cursor", "claude-code", "grok", "codex"]
+}
