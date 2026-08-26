@@ -9,18 +9,29 @@ export function computePackedByteLength(
   height: number,
   bitsPerPixel: number,
 ): number {
-  if (!Number.isInteger(width) || width <= 0) {
-    throw new DisplayProfileValidationError('width must be a positive integer');
+  if (!Number.isSafeInteger(width) || width <= 0) {
+    throw new DisplayProfileValidationError('width must be a positive safe integer');
   }
-  if (!Number.isInteger(height) || height <= 0) {
-    throw new DisplayProfileValidationError('height must be a positive integer');
+  if (!Number.isSafeInteger(height) || height <= 0) {
+    throw new DisplayProfileValidationError('height must be a positive safe integer');
   }
-  if (!Number.isInteger(bitsPerPixel) || bitsPerPixel <= 0) {
-    throw new DisplayProfileValidationError('bitsPerPixel must be a positive integer');
+  if (!Number.isSafeInteger(bitsPerPixel) || bitsPerPixel <= 0) {
+    throw new DisplayProfileValidationError('bitsPerPixel must be a positive safe integer');
   }
 
   const totalBits = width * height * bitsPerPixel;
-  return Math.ceil(totalBits / 8);
+  if (!Number.isSafeInteger(totalBits)) {
+    throw new DisplayProfileValidationError(
+      'packed size exceeds the maximum safe integer bit count',
+    );
+  }
+
+  const packedByteLength = Math.ceil(totalBits / 8);
+  if (!Number.isSafeInteger(packedByteLength)) {
+    throw new DisplayProfileValidationError('packedByteLength must be a positive safe integer');
+  }
+
+  return packedByteLength;
 }
 
 export function assertAspectRatioMatchesDimensions(

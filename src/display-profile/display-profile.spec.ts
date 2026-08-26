@@ -16,6 +16,13 @@ describe('computePackedByteLength', () => {
   it('computes 48000 bytes for 800x480 1bpp', () => {
     assert.equal(computePackedByteLength(800, 480, 1), 48_000);
   });
+
+  it('rejects dimensions that overflow to Infinity', () => {
+    assert.throws(
+      () => computePackedByteLength(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, 1),
+      DisplayProfileValidationError,
+    );
+  });
 });
 
 describe('defineDisplayProfile', () => {
