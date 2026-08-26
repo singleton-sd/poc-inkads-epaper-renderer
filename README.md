@@ -102,13 +102,24 @@ not arbitrary width/height — so cloud, preview, and firmware stay aligned.
 | Packed size | 48,000 bytes       |
 
 ```ts
-import { getDisplayProfile, listDisplayProfiles } from '@singleton-sd/inkads-epaper-renderer';
+import {
+  getDisplayProfile,
+  ingestImageToProfile,
+  listDisplayProfiles,
+} from '@singleton-sd/inkads-epaper-renderer';
 
 listDisplayProfiles(); // [{ id: 'waveshare-7.5-bw', ... }, ...]
-getDisplayProfile('waveshare-7.5-bw');
+const profile = getDisplayProfile('waveshare-7.5-bw');
+const rgb = ingestImageToProfile(pngOrJpegBytes, {
+  profile,
+  crop: { x: 0.5, y: 0.5 }, // optional cover-fit position
+});
+// rgb.width === 800, rgb.height === 480
 ```
 
-Future panels (including colour, issue #9) add new ids to the registry.
+PNG/JPEG decode and crop/resize are available; dithering and packing follow in
+later issues. Future panels (including colour, issue #9) add new ids to the
+registry.
 
 ## Related repositories
 
