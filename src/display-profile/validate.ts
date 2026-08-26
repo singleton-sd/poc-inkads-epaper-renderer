@@ -28,6 +28,17 @@ export function assertAspectRatioMatchesDimensions(
   height: number,
   aspectRatio: AspectRatio,
 ): void {
+  if (
+    !Number.isFinite(aspectRatio.width) ||
+    !Number.isFinite(aspectRatio.height) ||
+    aspectRatio.width <= 0 ||
+    aspectRatio.height <= 0
+  ) {
+    throw new DisplayProfileValidationError(
+      'aspectRatio width and height must be finite and strictly positive',
+    );
+  }
+
   if (aspectRatio.width * height !== aspectRatio.height * width) {
     throw new DisplayProfileValidationError(
       `aspectRatio ${aspectRatio.width}:${aspectRatio.height} does not match ${width}x${height}`,
@@ -35,9 +46,18 @@ export function assertAspectRatioMatchesDimensions(
   }
 }
 
+function assertSupportedPacking(bitsPerPixel: number, pixelPacking: string): void {
+  if (bitsPerPixel !== 1 || pixelPacking !== '1bpp-row-major') {
+    throw new DisplayProfileValidationError(
+      'only bitsPerPixel 1 with pixelPacking 1bpp-row-major is supported',
+    );
+  }
+}
+
 export function defineDisplayProfile(input: DisplayProfileInput): DisplayProfile {
   const id = asDisplayProfileId(input.id);
   assertAspectRatioMatchesDimensions(input.width, input.height, input.aspectRatio);
+  assertSupportedPacking(input.bitsPerPixel, input.pixelPacking);
 
   const expectedPackedByteLength = computePackedByteLength(
     input.width,

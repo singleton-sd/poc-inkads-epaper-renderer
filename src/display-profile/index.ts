@@ -7,6 +7,7 @@ export type {
   DisplayPolarity,
   DisplayProfile,
   DisplayProfileId,
+  DisplayProfileInput,
   PixelPacking,
 } from './types.js';
 export { DisplayProfileValidationError } from './errors.js';

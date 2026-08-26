@@ -104,7 +104,7 @@ not arbitrary width/height — so cloud, preview, and firmware stay aligned.
 ```ts
 import { getDisplayProfile, listDisplayProfiles } from '@singleton-sd/inkads-epaper-renderer';
 
-listDisplayProfiles(); // [waveshare-7.5-bw, …]
+listDisplayProfiles(); // [{ id: 'waveshare-7.5-bw', ... }, ...]
 getDisplayProfile('waveshare-7.5-bw');
 ```
 

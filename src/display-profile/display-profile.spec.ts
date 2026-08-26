@@ -56,6 +56,44 @@ describe('defineDisplayProfile', () => {
       DisplayProfileValidationError,
     );
   });
+
+  it('rejects non-positive aspect ratio terms', () => {
+    assert.throws(
+      () =>
+        defineDisplayProfile({
+          id: 'test-panel',
+          label: 'Test',
+          width: 800,
+          height: 480,
+          aspectRatio: { width: 0, height: 0 },
+          bitsPerPixel: 1,
+          pixelPacking: '1bpp-row-major',
+          packedByteLength: 48_000,
+          orientation: 'native',
+          polarity: 'normal',
+        }),
+      DisplayProfileValidationError,
+    );
+  });
+
+  it('rejects unsupported bit-depth and packing combinations', () => {
+    assert.throws(
+      () =>
+        defineDisplayProfile({
+          id: 'test-panel',
+          label: 'Test',
+          width: 800,
+          height: 480,
+          aspectRatio: { width: 5, height: 3 },
+          bitsPerPixel: 2,
+          pixelPacking: '1bpp-row-major',
+          packedByteLength: 96_000,
+          orientation: 'native',
+          polarity: 'normal',
+        }),
+      DisplayProfileValidationError,
+    );
+  });
 });
 
 describe('waveshare75BwProfile', () => {

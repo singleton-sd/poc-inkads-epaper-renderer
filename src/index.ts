@@ -25,6 +25,7 @@ export type {
   DisplayPolarity,
   DisplayProfile,
   DisplayProfileId,
+  DisplayProfileInput,
   PixelPacking,
 } from './display-profile/index.js';
 
