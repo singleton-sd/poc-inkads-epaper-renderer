@@ -36,6 +36,63 @@ function solidJpeg(width: number, height: number, rgb: [number, number, number])
   return Uint8Array.from(encoded.data);
 }
 
+/** Left half red, right half blue — for verifying crop.x. */
+function horizontalSplitRgb(width: number, height: number): {
+  width: number;
+  height: number;
+  rgb: Uint8Array;
+} {
+  const rgb = new Uint8Array(width * height * 3);
+  const mid = Math.floor(width / 2);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const o = (y * width + x) * 3;
+      if (x < mid) {
+        rgb[o] = 255;
+        rgb[o + 1] = 0;
+        rgb[o + 2] = 0;
+      } else {
+        rgb[o] = 0;
+        rgb[o + 1] = 0;
+        rgb[o + 2] = 255;
+      }
+    }
+  }
+  return { width, height, rgb };
+}
+
+/** Top half green, bottom half magenta — for verifying crop.y. */
+function verticalSplitRgb(width: number, height: number): {
+  width: number;
+  height: number;
+  rgb: Uint8Array;
+} {
+  const rgb = new Uint8Array(width * height * 3);
+  const mid = Math.floor(height / 2);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const o = (y * width + x) * 3;
+      if (y < mid) {
+        rgb[o] = 0;
+        rgb[o + 1] = 255;
+        rgb[o + 2] = 0;
+      } else {
+        rgb[o] = 255;
+        rgb[o + 1] = 0;
+        rgb[o + 2] = 255;
+      }
+    }
+  }
+  return { width, height, rgb };
+}
+
+function centrePixel(buffer: { width: number; height: number; rgb: Uint8Array }): number[] {
+  const x = Math.floor(buffer.width / 2);
+  const y = Math.floor(buffer.height / 2);
+  const o = (y * buffer.width + x) * 3;
+  return [buffer.rgb[o]!, buffer.rgb[o + 1]!, buffer.rgb[o + 2]!];
+}
+
 describe('decodeImage', () => {
   it('decodes a PNG into RGB', () => {
     const bytes = solidPng(2, 2, [10, 20, 30]);
@@ -98,6 +155,38 @@ describe('normaliseToProfile', () => {
       crop: { x: 0.25, y: 0.75 },
     });
     assert.deepEqual(a.rgb, b.rgb);
+  });
+
+  it('selects expected sides for crop.x 0 vs 1 on a wide source', () => {
+    // 1600×480 → scale 1, horizontal pan only (exact profile height).
+    const source = horizontalSplitRgb(1600, 480);
+    const left = normaliseToProfile(source, {
+      profile: waveshare75BwProfile,
+      crop: { x: 0, y: 0.5 },
+    });
+    const right = normaliseToProfile(source, {
+      profile: waveshare75BwProfile,
+      crop: { x: 1, y: 0.5 },
+    });
+    assert.deepEqual(centrePixel(left), [255, 0, 0]);
+    assert.deepEqual(centrePixel(right), [0, 0, 255]);
+    assert.notDeepEqual(left.rgb, right.rgb);
+  });
+
+  it('selects expected sides for crop.y 0 vs 1 on a tall source', () => {
+    // 800×960 → scale 1, vertical pan only (exact profile width).
+    const source = verticalSplitRgb(800, 960);
+    const top = normaliseToProfile(source, {
+      profile: waveshare75BwProfile,
+      crop: { x: 0.5, y: 0 },
+    });
+    const bottom = normaliseToProfile(source, {
+      profile: waveshare75BwProfile,
+      crop: { x: 0.5, y: 1 },
+    });
+    assert.deepEqual(centrePixel(top), [0, 255, 0]);
+    assert.deepEqual(centrePixel(bottom), [255, 0, 255]);
+    assert.notDeepEqual(top.rgb, bottom.rgb);
   });
 
   it('rejects crop offsets outside 0..1', () => {
