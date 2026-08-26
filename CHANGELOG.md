@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.0.4...0.1.0) (2026-08-26)
+
+### Features
+
+* [#2](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/2) Add display profile model ([a7c1887](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/a7c18878e225e8366e557257cc6999c4182d2ac0))
+
+### Bug Fixes
+
+* [#2](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/2) Address display profile review notes ([53ce013](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/53ce013c4673b2131476816df6c84fa68dcc68a5))
+* [#2](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/2) Guard packed size against integer overflow ([3c55b90](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/3c55b907a82ab9f9debf577b4a5897e2633d6aee))
+
 ## [0.0.4](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.0.3...0.0.4) (2026-08-25)
 
 ### Bug Fixes
