@@ -37,7 +37,10 @@ function solidJpeg(width: number, height: number, rgb: [number, number, number])
 }
 
 /** Left half red, right half blue — for verifying crop.x. */
-function horizontalSplitRgb(width: number, height: number): {
+function horizontalSplitRgb(
+  width: number,
+  height: number,
+): {
   width: number;
   height: number;
   rgb: Uint8Array;
@@ -62,7 +65,10 @@ function horizontalSplitRgb(width: number, height: number): {
 }
 
 /** Top half green, bottom half magenta — for verifying crop.y. */
-function verticalSplitRgb(width: number, height: number): {
+function verticalSplitRgb(
+  width: number,
+  height: number,
+): {
   width: number;
   height: number;
   rgb: Uint8Array;
