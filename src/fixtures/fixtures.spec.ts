@@ -53,6 +53,25 @@ describe('golden creative fixtures', () => {
     }
   });
 
+  it('only collides on the one fixture where the modes provably agree', () => {
+    // A shared digest usually means a mode silently stopped being applied. The
+    // sole legitimate case is documented in expected.ts.
+    const collisions: string[] = [];
+    for (const name of fixtureNames) {
+      const digests = EXPECTED_CHECKSUMS[name];
+      for (const [a, b] of [
+        ['threshold', 'floyd-steinberg'],
+        ['threshold', 'atkinson'],
+        ['floyd-steinberg', 'atkinson'],
+      ] as const) {
+        if (digests[a] === digests[b]) {
+          collisions.push(`${name}:${a}=${b}`);
+        }
+      }
+    }
+    assert.deepEqual(collisions, ['qr-high-contrast:threshold=atkinson']);
+  });
+
   it('distinguishes the three modes for dithered content', () => {
     const checksums = MODES.map(
       (mode) => packFixture('photograph-downscaled', mode).metadata.checksum,

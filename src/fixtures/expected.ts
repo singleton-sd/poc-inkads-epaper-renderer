@@ -8,8 +8,12 @@ import type { CreativeFixtureName } from './creatives.js';
  * bump must not change these values. Any other diff here is a pixel-level
  * renderer change and needs a deliberate review.
  *
- * Purely bi-level fixtures leave no quantisation error to diffuse, so their
- * `threshold` and `atkinson` digests legitimately match.
+ * `qr-high-contrast` legitimately shares one digest across `threshold` and
+ * `atkinson`. Its ink is near-black rather than pure black, so each dark pixel
+ * leaves a small quantisation error: Floyd–Steinberg passes all of it on and
+ * accumulates enough to flip pixels, while Atkinson discards a quarter at every
+ * step, so the residual dissipates before it can flip any. A collision between
+ * any other pair is a bug, not a coincidence.
  */
 export const EXPECTED_CHECKSUMS: Record<CreativeFixtureName, Record<MonoRenderMode, string>> = {
   'text-heavy': {
