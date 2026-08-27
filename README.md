@@ -150,6 +150,46 @@ download with the same cheap algorithm. Preview pixels are expanded from the
 packed bytes, not the upload, so what you see is what the panel renders.
 Rotated orientations are rejected until hardware validation (#8).
 
+## Framing: crop, zoom, and letterbox
+
+By default the image is **cover-fit**: scaled by `max(800 / width, 480 / height)`
+so it fills the panel, with the overflow cropped. Aspect ratio is never
+distorted, but content is discarded — a tall portrait can lose most of its
+height. `crop` slides that fixed window; `sourceRect` sets the window itself,
+which is what zooming is.
+
+```ts
+const framed = normaliseToProfile(decoded, {
+  profile,
+  // Region of the source to show, in source pixels.
+  sourceRect: { x: 120, y: 80, width: 900, height: 540 },
+});
+
+framed.sourceRect; // the region actually used, after aspect correction
+```
+
+The rectangle may extend beyond the image on any side. That is how you zoom out
+past cover-fit, and the uncovered area is filled with `background` (white by
+default), which is how you letterbox instead of crop:
+
+```ts
+// Fit an entire 1000×2000 portrait onto the panel, bars either side.
+normaliseToProfile(decoded, {
+  profile,
+  sourceRect: { x: -1166, y: 0, width: 3333, height: 2000 },
+  background: { r: 255, g: 255, b: 255 },
+});
+```
+
+If the rectangle's aspect ratio does not match the panel, it is **grown** about
+its centre until it does, never squashed: everything the user framed stays
+visible, and the artwork is never distorted. `sourceRect` on the result reports
+the corrected region, so a framing UI can draw handles matching the real output
+and warn when most of an upload is being discarded.
+
+`crop` and `sourceRect` are mutually exclusive, since a rectangle already
+carries its own position.
+
 ## Browser and Node
 
 The package has two entry points, so the browser never pays for a bundled

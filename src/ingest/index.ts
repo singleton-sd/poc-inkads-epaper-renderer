@@ -12,4 +12,6 @@ export type {
   DecodedImage,
   NormaliseToProfileOptions,
   ProfileRgbBuffer,
+  RgbColour,
+  SourceRect,
 } from './types.js';
