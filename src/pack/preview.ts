@@ -2,6 +2,7 @@ import { PNG } from 'pngjs';
 
 import type { DisplayProfile } from '../display-profile/types.js';
 import { FramebufferPackError } from './errors.js';
+import { bytesPerRowFor } from './layout.js';
 import type { PackedFramebuffer } from './types.js';
 
 /** RGBA pixels ready for `new ImageData(preview.data, preview.width, ...)`. */
@@ -50,9 +51,9 @@ function assertMatchesProfile(packed: PackedFramebuffer, profile: DisplayProfile
  * shows exactly what the panel will render.
  */
 export function toPreviewImage(packed: PackedFramebuffer, profile: DisplayProfile): PreviewImage {
+  const bytesPerRow = bytesPerRowFor(profile);
   assertMatchesProfile(packed, profile);
 
-  const bytesPerRow = profile.width / 8;
   const data = new Uint8ClampedArray(profile.width * profile.height * 4);
   const darkBitIsSet = profile.polarity === 'normal';
 

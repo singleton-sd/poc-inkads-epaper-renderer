@@ -2,6 +2,7 @@ import type { DisplayProfile } from '../display-profile/types.js';
 import { RENDERER_VERSION } from '../version.js';
 import { crc32Hex } from './crc32.js';
 import { FramebufferPackError } from './errors.js';
+import { bytesPerRowFor } from './layout.js';
 import type { PackMonoBitmapOptions, PackSource, PackedFramebuffer } from './types.js';
 
 function validate(source: PackSource, profile: DisplayProfile): void {
@@ -21,28 +22,6 @@ function validate(source: PackSource, profile: DisplayProfile): void {
     throw new FramebufferPackError(
       'INVALID_BITMAP',
       `pixel count ${source.pixels.length} does not match ${profile.width}×${profile.height}`,
-    );
-  }
-  if (profile.pixelPacking !== '1bpp-row-major' || profile.bitsPerPixel !== 1) {
-    throw new FramebufferPackError(
-      'UNSUPPORTED_PACKING',
-      `profile ${profile.id} uses unsupported packing ${profile.pixelPacking}@${profile.bitsPerPixel}bpp`,
-    );
-  }
-  // Profile validation rounds the packed size up, so a width that is not a
-  // multiple of 8 would give a fractional bytes-per-row and corrupt every
-  // row offset below.
-  if (profile.width % 8 !== 0) {
-    throw new FramebufferPackError(
-      'UNSUPPORTED_PACKING',
-      `profile width ${profile.width} must be a multiple of 8 for row-major 1bpp packing`,
-    );
-  }
-  const expectedPackedByteLength = (profile.width / 8) * profile.height;
-  if (profile.packedByteLength !== expectedPackedByteLength) {
-    throw new FramebufferPackError(
-      'PACKED_LENGTH_MISMATCH',
-      `profile declares ${profile.packedByteLength} packed bytes but ${profile.width}×${profile.height} needs ${expectedPackedByteLength}`,
     );
   }
   if (profile.orientation !== 'native') {
@@ -66,9 +45,9 @@ export function packMonoBitmap(
   options: PackMonoBitmapOptions,
 ): PackedFramebuffer {
   const { profile } = options;
+  const bytesPerRow = bytesPerRowFor(profile);
   validate(source, profile);
 
-  const bytesPerRow = profile.width / 8;
   const bytes = new Uint8Array(profile.packedByteLength);
   const darkBitIsSet = profile.polarity === 'normal';
 

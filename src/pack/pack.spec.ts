@@ -205,6 +205,40 @@ describe('toPreviewImage', () => {
     assert.deepEqual([...preview.data.slice(8 * 4, 8 * 4 + 4)], [255, 255, 255, 255]);
   });
 
+  it('rejects a byte-misaligned profile instead of reading fractional indexes', () => {
+    // 100px wide validates as a profile (750 bytes, rounded up) but gives a
+    // 12.5-byte row stride, so every odd row would read fractional indexes.
+    const misaligned = defineDisplayProfile({
+      ...profile,
+      label: 'Misaligned',
+      width: 100,
+      height: 60,
+      aspectRatio: { width: 5, height: 3 },
+      packedByteLength: 750,
+    });
+    const external = {
+      bytes: new Uint8Array(750),
+      metadata: {
+        ...packMonoBitmap(
+          bitmapOf(() => 1),
+          { profile },
+        ).metadata,
+        profileId: misaligned.id,
+        width: misaligned.width,
+        height: misaligned.height,
+        byteLength: 750,
+      },
+    };
+    assert.throws(
+      () => toPreviewImage(external, misaligned),
+      (error: unknown) => {
+        assert.ok(error instanceof FramebufferPackError);
+        assert.equal(error.code, 'UNSUPPORTED_PACKING');
+        return true;
+      },
+    );
+  });
+
   it('rejects a profile that differs only in polarity', () => {
     // Same id and byte length, but rendering it would invert every shade.
     const packed = packMonoBitmap(
