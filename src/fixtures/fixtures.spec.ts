@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
@@ -11,6 +12,12 @@ import { EXPECTED_CHECKSUMS } from './expected.js';
 
 const profile = waveshare75BwProfile;
 const MODES: readonly MonoRenderMode[] = ['threshold', 'floyd-steinberg', 'atkinson'];
+
+const MODE_PAIRS = [
+  ['threshold', 'floyd-steinberg'],
+  ['threshold', 'atkinson'],
+  ['floyd-steinberg', 'atkinson'],
+] as const satisfies readonly (readonly [MonoRenderMode, MonoRenderMode])[];
 
 const fixtureNames = Object.keys(CREATIVE_FIXTURES) as CreativeFixtureName[];
 
@@ -54,17 +61,16 @@ describe('golden creative fixtures', () => {
   });
 
   it('only collides on the one fixture where the modes provably agree', () => {
-    // A shared digest usually means a mode silently stopped being applied. The
-    // sole legitimate case is documented in expected.ts.
+    // Compares the packed buffers rather than the committed digests, so this
+    // reflects what the renderer actually produced and equal CRC32s cannot
+    // stand in for byte equality. A shared result usually means a mode silently
+    // stopped being applied; the sole legitimate case is documented in
+    // expected.ts.
     const collisions: string[] = [];
     for (const name of fixtureNames) {
-      const digests = EXPECTED_CHECKSUMS[name];
-      for (const [a, b] of [
-        ['threshold', 'floyd-steinberg'],
-        ['threshold', 'atkinson'],
-        ['floyd-steinberg', 'atkinson'],
-      ] as const) {
-        if (digests[a] === digests[b]) {
+      const packedByMode = new Map(MODES.map((mode) => [mode, packFixture(name, mode).bytes]));
+      for (const [a, b] of MODE_PAIRS) {
+        if (Buffer.from(packedByMode.get(a)!).equals(Buffer.from(packedByMode.get(b)!))) {
           collisions.push(`${name}:${a}=${b}`);
         }
       }
