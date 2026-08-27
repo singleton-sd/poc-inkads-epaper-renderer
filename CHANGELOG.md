@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.2.0...0.3.0) (2026-08-27)
+
+### Features
+
+* [#5](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/5) Pack framebuffer with preview and checksum ([4493909](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/449390994b55b32e458d5f88677b88db307dc3bc))
+
+### Bug Fixes
+
+* [#5](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/5) Share row-stride guard with preview ([9ee08b7](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/9ee08b7c6938af0babc90638b28162c6a4b385bb))
+* [#5](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/5) Validate packing and preview profile invariants ([293e4ee](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/293e4ee777dd77c36d7231df83c38d4b517f57c4))
+
 ## [0.2.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.1.0...0.2.0) (2026-08-27)
 
 ### Features

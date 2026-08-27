@@ -1,6 +1,6 @@
 {
   "name": "@singleton-sd/inkads-epaper-renderer",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Shared TypeScript e-paper image renderer for InkAds",
   "type": "module",
