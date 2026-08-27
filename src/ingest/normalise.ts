@@ -242,6 +242,16 @@ export function normaliseToProfile(
   const originY = rect.y;
   const stepX = rect.width / targetW;
   const stepY = rect.height / targetH;
+  // Each footprint area is stepX * stepY, which can overflow to Infinity even
+  // when both steps are finite. The area average would then divide Infinity by
+  // Infinity and write NaN, which a Uint8Array stores as 0 — turning a white
+  // background silently black instead of failing.
+  if (!Number.isFinite(stepX * stepY)) {
+    throw new ImageIngestError(
+      'INVALID_CROP',
+      'sourceRect is too large to sample: width × height overflows',
+    );
+  }
   // Averaging only helps when an output pixel covers more than one source pixel.
   const downscaling = stepX > 1 || stepY > 1;
 

@@ -488,6 +488,22 @@ describe('normaliseToProfile sourceRect', () => {
     }
   });
 
+  it('rejects a rectangle whose sampling footprint overflows', () => {
+    // Both dimensions are finite and the aspect ratio matches, but their
+    // product does not fit a double. Left unguarded this wrote NaN, which a
+    // Uint8Array stores as 0, rendering the white background as solid black.
+    const height = 1e308;
+    assert.throws(
+      () =>
+        normaliseToProfile(greySource(100, 60), {
+          profile,
+          sourceRect: { x: 0, y: 0, width: (height * 5) / 3, height },
+          background: { r: 255, g: 255, b: 255 },
+        }),
+      (error: unknown) => error instanceof ImageIngestError && error.code === 'INVALID_CROP',
+    );
+  });
+
   it('rejects an out-of-range background channel', () => {
     assert.throws(
       () =>
