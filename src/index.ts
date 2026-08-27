@@ -43,6 +43,10 @@ export type {
   ProfileRgbBuffer,
 } from './ingest/index.js';
 
+export { MonoRenderError, renderMono, rgbToLuma } from './mono/index.js';
+
+export type { MonoBitmap, MonoRenderMode, MonoSource, RenderMonoOptions } from './mono/index.js';
+
 export type RendererStub = {
   readonly packageName: typeof RENDERER_PACKAGE_NAME;
   readonly version: string;

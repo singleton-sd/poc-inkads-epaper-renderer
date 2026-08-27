@@ -117,9 +117,12 @@ const rgb = ingestImageToProfile(pngOrJpegBytes, {
 // rgb.width === 800, rgb.height === 480
 ```
 
-PNG/JPEG decode and crop/resize are available; dithering and packing follow in
-later issues. Future panels (including colour, issue #9) add new ids to the
-registry.
+PNG/JPEG decode and crop/resize are available. Monochrome modes
+(`threshold`, `floyd-steinberg`, `atkinson`) convert profile RGB to a
+1-bit bitmap (`0` black / `1` white). Prefer `threshold` for text, logos,
+and QR; use Atkinson for UI/illustration contrast; Floyd–Steinberg for
+fullest grey simulation. Packing follows in a later issue. Future panels
+(including colour, issue #9) add new ids to the registry.
 
 ## Related repositories
 
