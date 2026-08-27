@@ -242,11 +242,13 @@ export function normaliseToProfile(
   const originY = rect.y;
   const stepX = rect.width / targetW;
   const stepY = rect.height / targetH;
-  // Each footprint area is stepX * stepY, which can overflow to Infinity even
-  // when both steps are finite. The area average would then divide Infinity by
-  // Infinity and write NaN, which a Uint8Array stores as 0 — turning a white
+  // Each footprint area is stepX * stepY, which can overflow even when both
+  // steps are finite. The area average weights a channel by that area, so the
+  // ceiling is MAX_VALUE / 255 rather than merely finite: above it the
+  // accumulator reaches Infinity and the result stores as 0, turning a white
   // background silently black instead of failing.
-  if (!Number.isFinite(stepX * stepY)) {
+  const footprint = stepX * stepY;
+  if (!Number.isFinite(footprint) || footprint > Number.MAX_VALUE / 255) {
     throw new ImageIngestError(
       'INVALID_CROP',
       'sourceRect is too large to sample: width × height overflows',

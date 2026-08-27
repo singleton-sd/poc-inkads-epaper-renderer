@@ -490,17 +490,41 @@ describe('normaliseToProfile sourceRect', () => {
 
   it('rejects a rectangle whose sampling footprint overflows', () => {
     // Both dimensions are finite and the aspect ratio matches, but their
-    // product does not fit a double. Left unguarded this wrote NaN, which a
-    // Uint8Array stores as 0, rendering the white background as solid black.
+    // product does not. Note `height * (5 / 3)` rather than `height * 5 / 3`:
+    // the latter overflows at the multiply, so it would be rejected as
+    // non-finite and never reach the footprint guard under test.
     const height = 1e308;
+    const width = height * (5 / 3);
+    assert.ok(Number.isFinite(width), 'the rectangle itself must stay finite');
     assert.throws(
       () =>
         normaliseToProfile(greySource(100, 60), {
           profile,
-          sourceRect: { x: 0, y: 0, width: (height * 5) / 3, height },
+          sourceRect: { x: 0, y: 0, width, height },
           background: { r: 255, g: 255, b: 255 },
         }),
-      (error: unknown) => error instanceof ImageIngestError && error.code === 'INVALID_CROP',
+      (error: unknown) =>
+        error instanceof ImageIngestError &&
+        error.code === 'INVALID_CROP' &&
+        error.message.includes('too large to sample'),
+    );
+  });
+
+  it('rejects a footprint too large to weight a channel', () => {
+    // Finite footprint, but above MAX_VALUE / 255, so `255 * uncovered`
+    // reaches Infinity and the channel stores as 0 — black, not white.
+    const step = 1e153;
+    assert.throws(
+      () =>
+        normaliseToProfile(greySource(100, 60), {
+          profile,
+          sourceRect: { x: 0, y: 0, width: 800 * step, height: 480 * step },
+          background: { r: 255, g: 255, b: 255 },
+        }),
+      (error: unknown) =>
+        error instanceof ImageIngestError &&
+        error.code === 'INVALID_CROP' &&
+        error.message.includes('too large to sample'),
     );
   });
 
