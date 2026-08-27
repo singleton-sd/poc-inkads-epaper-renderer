@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.0.1...1.1.0) (2026-08-27)
+
+### Features
+
+* [#25](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/25) Add zoom via an explicit crop rectangle ([d372532](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/d372532f821f60cd39bffe7a3b886a7ca5dc91f8)), closes [#7](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/7)
+
+### Bug Fixes
+
+* [#25](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/25) Bound footprint by the channel weight limit ([8ccfe9f](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/8ccfe9f9a63bb73628fab23018750694b43515f9))
+* [#25](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/25) Reject rectangles that overflow when sampled ([f07afce](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/f07afce90a0dd307cf689a8ddf217c579bcbad7e))
+
 ## [1.0.1](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.0.0...1.0.1) (2026-08-27)
 
 ## [1.0.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.4.0...1.0.0) (2026-08-27)
