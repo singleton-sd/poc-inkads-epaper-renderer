@@ -14,8 +14,9 @@ packed framebuffer bytes only.
 
 ## Status
 
-Proof of concept. Display profiles and the Waveshare 7.5″ B/W target are
-available; crop, dither, and packing land in issues #3–#5.
+Proof of concept. The pipeline from upload to device-ready bytes is complete
+for the Waveshare 7.5″ B/W target: ingest → crop/resize → dither → pack.
+Golden fixtures (#7) and hardware validation (#8) are still open.
 
 Package name: `@singleton-sd/inkads-epaper-renderer` (private until publish is
 enabled).
@@ -117,12 +118,40 @@ const rgb = ingestImageToProfile(pngOrJpegBytes, {
 // rgb.width === 800, rgb.height === 480
 ```
 
-PNG/JPEG decode and crop/resize are available. Monochrome modes
-(`threshold`, `floyd-steinberg`, `atkinson`) convert profile RGB to a
-1-bit bitmap (`0` black / `1` white). Prefer `threshold` for text, logos,
-and QR; use Atkinson for UI/illustration contrast; Floyd–Steinberg for
-fullest grey simulation. Packing follows in a later issue. Future panels
-(including colour, issue #9) add new ids to the registry.
+Monochrome modes (`threshold`, `floyd-steinberg`, `atkinson`) convert profile
+RGB to a 1-bit bitmap (`0` black / `1` white). Prefer `threshold` for text,
+logos, and QR; use Atkinson for UI/illustration contrast; Floyd–Steinberg for
+fullest grey simulation. Future panels (including colour, issue #9) add new ids
+to the registry.
+
+## Packed framebuffer and preview
+
+```ts
+import {
+  ingestImageToProfile,
+  packMonoBitmap,
+  renderMono,
+  toPreviewImage,
+  waveshare75BwProfile as profile,
+} from '@singleton-sd/inkads-epaper-renderer';
+
+const rgb = ingestImageToProfile(uploadBytes, { profile });
+const bitmap = renderMono(rgb, { mode: 'atkinson' });
+const packed = packMonoBitmap(bitmap, { profile });
+
+packed.bytes.length; // 48000 — send these bytes to the device
+packed.metadata; // profileId, rendererVersion, mode, byteLength, checksum, …
+
+const preview = toPreviewImage(packed, profile);
+canvasContext.putImageData(new ImageData(preview.data, preview.width), 0, 0);
+```
+
+The packed layout is the firmware contract: row-major, 8 pixels per byte, MSB
+is the leftmost pixel, and with `polarity: 'normal'` a set bit is a dark pixel.
+`checksum` is CRC-32 (IEEE) over the packed bytes, so firmware can verify a
+download with the same cheap algorithm. Preview pixels are expanded from the
+packed bytes, not the upload, so what you see is what the panel renders.
+Rotated orientations are rejected until hardware validation (#8).
 
 ## Related repositories
 

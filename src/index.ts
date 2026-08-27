@@ -47,6 +47,24 @@ export { MonoRenderError, renderMono, rgbToLuma } from './mono/index.js';
 
 export type { MonoBitmap, MonoRenderMode, MonoSource, RenderMonoOptions } from './mono/index.js';
 
+export {
+  crc32Hex,
+  encodePreviewPng,
+  FramebufferPackError,
+  packMonoBitmap,
+  toPreviewImage,
+} from './pack/index.js';
+
+export type {
+  FramebufferMetadata,
+  PackedFramebuffer,
+  PackMonoBitmapOptions,
+  PackSource,
+  PreviewImage,
+} from './pack/index.js';
+
+export { RENDERER_VERSION } from './version.js';
+
 export type RendererStub = {
   readonly packageName: typeof RENDERER_PACKAGE_NAME;
   readonly version: string;
