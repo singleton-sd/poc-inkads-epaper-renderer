@@ -182,6 +182,31 @@ describe('decodeImage', () => {
     );
   });
 
+  it('rejects malformed limit overrides instead of disabling the guard', () => {
+    const bytes = solidPng(8, 8, [0, 0, 0]);
+    for (const limits of [
+      { maxPixels: 0 },
+      { maxPixels: -1 },
+      { maxByteLength: Number.NaN },
+      { maxDimension: 1.5 },
+      { maxPixels: Number.POSITIVE_INFINITY },
+    ]) {
+      assert.throws(
+        () => decodeImage(bytes, { limits }),
+        (error: unknown) => {
+          assert.ok(error instanceof ImageIngestError);
+          assert.equal(error.code, 'INVALID_LIMITS');
+          return true;
+        },
+        `expected ${JSON.stringify(limits)} to be rejected`,
+      );
+    }
+  });
+
+  it('exposes frozen defaults so callers cannot weaken them globally', () => {
+    assert.ok(Object.isFrozen(DEFAULT_DECODE_LIMITS));
+  });
+
   it('defaults leave realistic creatives untouched', () => {
     assert.ok(DEFAULT_DECODE_LIMITS.maxPixels > 800 * 480);
     assert.doesNotThrow(() => decodeImage(solidJpeg(64, 64, [10, 20, 30])));
