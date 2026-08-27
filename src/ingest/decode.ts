@@ -9,23 +9,11 @@ import {
   resolveLimits,
   type DecodeLimits,
 } from './limits.js';
+import { rgbaToRgb } from './rgba.js';
 import type { DecodedImage } from './types.js';
 
 function toUint8Array(input: ArrayBuffer | Uint8Array): Uint8Array {
   return input instanceof Uint8Array ? input : new Uint8Array(input);
-}
-
-function rgbaToRgb(rgba: Uint8Array, pixelCount: number): Uint8Array {
-  const rgb = new Uint8Array(pixelCount * 3);
-  for (let i = 0, j = 0; i < pixelCount; i += 1, j += 3) {
-    const o = i * 4;
-    const a = rgba[o + 3]! / 255;
-    // Composite transparent pixels onto white.
-    rgb[j] = Math.round(rgba[o]! * a + 255 * (1 - a));
-    rgb[j + 1] = Math.round(rgba[o + 1]! * a + 255 * (1 - a));
-    rgb[j + 2] = Math.round(rgba[o + 2]! * a + 255 * (1 - a));
-  }
-  return rgb;
 }
 
 function sniffFormat(bytes: Uint8Array): 'png' | 'jpeg' | null {

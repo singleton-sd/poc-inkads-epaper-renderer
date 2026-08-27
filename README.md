@@ -103,11 +103,8 @@ not arbitrary width/height — so cloud, preview, and firmware stay aligned.
 | Packed size | 48,000 bytes       |
 
 ```ts
-import {
-  getDisplayProfile,
-  ingestImageToProfile,
-  listDisplayProfiles,
-} from '@singleton-sd/inkads-epaper-renderer';
+import { getDisplayProfile, listDisplayProfiles } from '@singleton-sd/inkads-epaper-renderer';
+import { ingestImageToProfile } from '@singleton-sd/inkads-epaper-renderer/node';
 
 listDisplayProfiles(); // [{ id: 'waveshare-7.5-bw', ... }, ...]
 const profile = getDisplayProfile('waveshare-7.5-bw');
@@ -128,12 +125,12 @@ to the registry.
 
 ```ts
 import {
-  ingestImageToProfile,
   packMonoBitmap,
   renderMono,
   toPreviewImage,
   waveshare75BwProfile as profile,
 } from '@singleton-sd/inkads-epaper-renderer';
+import { ingestImageToProfile } from '@singleton-sd/inkads-epaper-renderer/node';
 
 const rgb = ingestImageToProfile(uploadBytes, { profile });
 const bitmap = renderMono(rgb, { mode: 'atkinson' });
@@ -152,6 +149,44 @@ is the leftmost pixel, and with `polarity: 'normal'` a set bit is a dark pixel.
 download with the same cheap algorithm. Preview pixels are expanded from the
 packed bytes, not the upload, so what you see is what the panel renders.
 Rotated orientations are rejected until hardware validation (#8).
+
+## Browser and Node
+
+The package has two entry points, so the browser never pays for a bundled
+image codec:
+
+| Entry                                       | Runs in          | Contains                                                  |
+| ------------------------------------------- | ---------------- | --------------------------------------------------------- |
+| `@singleton-sd/inkads-epaper-renderer`      | Browser and Node | Profiles, crop/resize, dither, pack, preview              |
+| `@singleton-sd/inkads-epaper-renderer/node` | Node only        | `decodeImage`, `ingestImageToProfile`, `encodePreviewPng` |
+
+The root entry point imports no Node built-ins, so the full
+crop → dither → pack → preview pipeline can re-run live in the browser as the
+user frames their creative. A test walks the import graph of each entry point
+and fails if a Node built-in or codec reaches the root one.
+
+Only turning an uploaded file into pixels differs by platform. In the browser
+the platform already has a decoder, so use it and pass the canvas pixels to
+`fromRgbaImageData`:
+
+```ts
+import {
+  fromRgbaImageData,
+  normaliseToProfile,
+  waveshare75BwProfile as profile,
+} from '@singleton-sd/inkads-epaper-renderer';
+
+const bitmap = await createImageBitmap(file);
+const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+const context = canvas.getContext('2d')!;
+context.drawImage(bitmap, 0, 0);
+
+const decoded = fromRgbaImageData(context.getImageData(0, 0, bitmap.width, bitmap.height));
+const rgb = normaliseToProfile(decoded, { profile, crop: { x: 0.5, y: 0.5 } });
+```
+
+`encodePreviewPng` is server-only for the same reason: in the browser, draw the
+`PreviewImage` to a canvas and use `canvas.toBlob()` when you need a file.
 
 ## Related repositories
 

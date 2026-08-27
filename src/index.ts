@@ -3,6 +3,16 @@
  *
  * Framework-independent TypeScript package for converting advertiser artwork
  * into display-ready e-paper assets.
+ *
+ * This entry point is isomorphic: it touches no Node built-ins, so the whole
+ * crop → dither → pack → preview pipeline can run live in the browser while
+ * the user frames their creative. File decoding and PNG encoding need platform
+ * APIs and live in `@singleton-sd/inkads-epaper-renderer/node`; in the browser,
+ * decode with `createImageBitmap` and hand the canvas pixels to
+ * `fromRgbaImageData`.
+ *
+ * Imports here must stay granular rather than using module barrels, since a
+ * barrel would pull the Node-only decoder back into the browser bundle.
  */
 
 export const RENDERER_PACKAGE_NAME = '@singleton-sd/inkads-epaper-renderer' as const;
@@ -29,34 +39,25 @@ export type {
   PixelPacking,
 } from './display-profile/index.js';
 
-export {
-  decodeImage,
-  DEFAULT_DECODE_LIMITS,
-  ImageIngestError,
-  ingestImageToProfile,
-  normaliseToProfile,
-} from './ingest/index.js';
+export { ImageIngestError } from './ingest/errors.js';
+export { DEFAULT_DECODE_LIMITS } from './ingest/limits.js';
+export type { DecodeLimits } from './ingest/limits.js';
+export { normaliseToProfile } from './ingest/normalise.js';
+export { fromRgbaImageData } from './ingest/rgba.js';
+export type { RgbaImageData } from './ingest/rgba.js';
 
 export type {
   CropPosition,
   DecodedImage,
-  DecodeImageOptions,
-  DecodeLimits,
   NormaliseToProfileOptions,
   ProfileRgbBuffer,
-} from './ingest/index.js';
+} from './ingest/types.js';
 
 export { MonoRenderError, renderMono, rgbToLuma } from './mono/index.js';
 
 export type { MonoBitmap, MonoRenderMode, MonoSource, RenderMonoOptions } from './mono/index.js';
 
-export {
-  crc32Hex,
-  encodePreviewPng,
-  FramebufferPackError,
-  packMonoBitmap,
-  toPreviewImage,
-} from './pack/index.js';
+export { crc32Hex, FramebufferPackError, packMonoBitmap, toPreviewImage } from './pack/index.js';
 
 export type {
   FramebufferMetadata,
