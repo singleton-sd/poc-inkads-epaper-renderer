@@ -4,9 +4,12 @@ import type {
   DecodedImage,
   NormaliseToProfileOptions,
   ProfileRgbBuffer,
+  RgbColour,
+  SourceRect,
 } from './types.js';
 
 const DEFAULT_CROP: CropPosition = { x: 0.5, y: 0.5 };
+const DEFAULT_BACKGROUND: RgbColour = { r: 255, g: 255, b: 255 };
 
 function clampUnit(value: number, label: string): number {
   if (!Number.isFinite(value)) {
@@ -18,16 +21,104 @@ function clampUnit(value: number, label: string): number {
   return value;
 }
 
+function validateChannel(value: number, label: string): number {
+  if (!Number.isInteger(value) || value < 0 || value > 255) {
+    throw new ImageIngestError(
+      'INVALID_CROP',
+      `${label} must be an integer between 0 and 255 inclusive`,
+    );
+  }
+  return value;
+}
+
+function validateBackground(background: RgbColour): RgbColour {
+  return {
+    r: validateChannel(background.r, 'background.r'),
+    g: validateChannel(background.g, 'background.g'),
+    b: validateChannel(background.b, 'background.b'),
+  };
+}
+
+/**
+ * Grow the requested rectangle about its centre until it matches the panel
+ * aspect ratio.
+ *
+ * Growing rather than shrinking guarantees everything the user framed stays
+ * visible; the alternative would silently crop a selection they just made.
+ * Non-uniform scaling is never an option, since a distorted advert is worse
+ * than a letterboxed one.
+ */
+function correctAspect(rect: SourceRect, targetW: number, targetH: number): SourceRect {
+  const targetAspect = targetW / targetH;
+  const rectAspect = rect.width / rect.height;
+  if (rectAspect === targetAspect) {
+    return rect;
+  }
+
+  const width = rectAspect < targetAspect ? rect.height * targetAspect : rect.width;
+  const height = rectAspect < targetAspect ? rect.height : rect.width / targetAspect;
+  return {
+    x: rect.x + (rect.width - width) / 2,
+    y: rect.y + (rect.height - height) / 2,
+    width,
+    height,
+  };
+}
+
+function validateSourceRect(rect: SourceRect): SourceRect {
+  for (const [label, value] of [
+    ['sourceRect.x', rect.x],
+    ['sourceRect.y', rect.y],
+    ['sourceRect.width', rect.width],
+    ['sourceRect.height', rect.height],
+  ] as const) {
+    if (!Number.isFinite(value)) {
+      throw new ImageIngestError('INVALID_CROP', `${label} must be a finite number`);
+    }
+  }
+  if (rect.width <= 0 || rect.height <= 0) {
+    throw new ImageIngestError('INVALID_CROP', 'sourceRect width and height must be positive');
+  }
+  return rect;
+}
+
+/** The cover-fit window: the largest region matching the panel aspect ratio. */
+function coverFitRect(
+  source: DecodedImage,
+  crop: CropPosition,
+  targetW: number,
+  targetH: number,
+): SourceRect {
+  const cropX = clampUnit(crop.x, 'crop.x');
+  const cropY = clampUnit(crop.y, 'crop.y');
+  const scale = Math.max(targetW / source.width, targetH / source.height);
+  const width = targetW / scale;
+  const height = targetH / scale;
+  return {
+    x: Math.max(0, source.width - width) * cropX,
+    y: Math.max(0, source.height - height) * cropY,
+    width,
+    height,
+  };
+}
+
 function sampleNearest(
   source: DecodedImage,
   sx: number,
   sy: number,
+  background: RgbColour,
   out: Uint8Array,
   outOffset: number,
 ): void {
-  const x = Math.min(source.width - 1, Math.max(0, Math.round(sx)));
-  const y = Math.min(source.height - 1, Math.max(0, Math.round(sy)));
-  const i = (y * source.width + x) * 3;
+  const rx = Math.round(sx);
+  const ry = Math.round(sy);
+  if (rx < 0 || rx >= source.width || ry < 0 || ry >= source.height) {
+    out[outOffset] = background.r;
+    out[outOffset + 1] = background.g;
+    out[outOffset + 2] = background.b;
+    return;
+  }
+  const i = (ry * source.width + rx) * 3;
   out[outOffset] = source.rgb[i]!;
   out[outOffset + 1] = source.rgb[i + 1]!;
   out[outOffset + 2] = source.rgb[i + 2]!;
@@ -46,6 +137,7 @@ function sampleNearest(
  */
 function sampleAreaAverage(
   source: DecodedImage,
+  background: RgbColour,
   x0: number,
   y0: number,
   x1: number,
@@ -85,8 +177,22 @@ function sampleAreaAverage(
     }
   }
 
+  // The footprint can hang off the edge of the source when zoomed out, so the
+  // uncovered remainder contributes background rather than being ignored.
+  // Weighting it keeps the letterbox edge smooth instead of hard-stepped.
+  const footprint = (x1 - x0) * (y1 - y0);
+  const uncovered = Math.max(0, footprint - totalWeight);
+  if (uncovered > 0) {
+    r += background.r * uncovered;
+    g += background.g * uncovered;
+    b += background.b * uncovered;
+    totalWeight += uncovered;
+  }
+
   if (totalWeight === 0) {
-    sampleNearest(source, (left + right) / 2 - 0.5, (top + bottom) / 2 - 0.5, out, outOffset);
+    out[outOffset] = background.r;
+    out[outOffset + 1] = background.g;
+    out[outOffset + 2] = background.b;
     return;
   }
 
@@ -96,36 +202,46 @@ function sampleAreaAverage(
 }
 
 /**
- * Cover-fit crop then resize to the display profile dimensions.
+ * Render a region of the source at the display profile dimensions.
+ *
+ * By default this cover-fits: the largest centred region matching the panel
+ * aspect ratio, which fills the panel but discards whatever falls outside.
+ * Pass `sourceRect` to choose the region explicitly, which is what a framing UI
+ * does when the user zooms or pans; it may extend past the image to zoom out,
+ * and the surrounding area is filled with `background`.
  *
  * Downscaling averages the covered source area; upscaling repeats the nearest
- * pixel. Both are deterministic: identical input and crop yield identical bytes.
+ * pixel. Both are deterministic: identical input and options yield identical
+ * bytes.
  */
 export function normaliseToProfile(
   source: DecodedImage,
   options: NormaliseToProfileOptions,
 ): ProfileRgbBuffer {
   const { profile } = options;
-  const crop = options.crop ?? DEFAULT_CROP;
-  const cropX = clampUnit(crop.x, 'crop.x');
-  const cropY = clampUnit(crop.y, 'crop.y');
 
+  if (options.crop !== undefined && options.sourceRect !== undefined) {
+    throw new ImageIngestError(
+      'INVALID_CROP',
+      'pass either crop or sourceRect, not both: sourceRect already sets the position',
+    );
+  }
   if (source.width < 1 || source.height < 1) {
     throw new ImageIngestError('INVALID_IMAGE', 'decoded image has no pixels');
   }
 
   const targetW = profile.width;
   const targetH = profile.height;
-  const scale = Math.max(targetW / source.width, targetH / source.height);
-  const cropW = targetW / scale;
-  const cropH = targetH / scale;
-  const maxOffsetX = Math.max(0, source.width - cropW);
-  const maxOffsetY = Math.max(0, source.height - cropH);
-  const originX = maxOffsetX * cropX;
-  const originY = maxOffsetY * cropY;
+  const background = validateBackground(options.background ?? DEFAULT_BACKGROUND);
+  const rect =
+    options.sourceRect === undefined
+      ? coverFitRect(source, options.crop ?? DEFAULT_CROP, targetW, targetH)
+      : correctAspect(validateSourceRect(options.sourceRect), targetW, targetH);
 
-  const stepX = cropW / targetW;
-  const stepY = cropH / targetH;
+  const originX = rect.x;
+  const originY = rect.y;
+  const stepX = rect.width / targetW;
+  const stepY = rect.height / targetH;
   // Averaging only helps when an output pixel covers more than one source pixel.
   const downscaling = stepX > 1 || stepY > 1;
 
@@ -136,11 +252,11 @@ export function normaliseToProfile(
       if (downscaling) {
         const x0 = originX + x * stepX;
         const y0 = originY + y * stepY;
-        sampleAreaAverage(source, x0, y0, x0 + stepX, y0 + stepY, rgb, outOffset);
+        sampleAreaAverage(source, background, x0, y0, x0 + stepX, y0 + stepY, rgb, outOffset);
       } else {
         const sx = originX + (x + 0.5) * stepX - 0.5;
         const sy = originY + (y + 0.5) * stepY - 0.5;
-        sampleNearest(source, sx, sy, rgb, outOffset);
+        sampleNearest(source, sx, sy, background, rgb, outOffset);
       }
     }
   }
@@ -150,5 +266,6 @@ export function normaliseToProfile(
     width: targetW,
     height: targetH,
     rgb,
+    sourceRect: rect,
   };
 }

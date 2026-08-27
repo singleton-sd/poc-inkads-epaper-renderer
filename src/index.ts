@@ -51,6 +51,8 @@ export type {
   DecodedImage,
   NormaliseToProfileOptions,
   ProfileRgbBuffer,
+  RgbColour,
+  SourceRect,
 } from './ingest/types.js';
 
 export { MonoRenderError, renderMono, rgbToLuma } from './mono/index.js';

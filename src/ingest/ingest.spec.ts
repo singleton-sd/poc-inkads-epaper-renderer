@@ -381,6 +381,122 @@ describe('ingestImageToProfile', () => {
   });
 });
 
+describe('normaliseToProfile sourceRect', () => {
+  const profile = waveshare75BwProfile;
+
+  /** Solid mid-grey source, so background fill is unambiguous. */
+  function greySource(width: number, height: number) {
+    const rgb = new Uint8Array(width * height * 3).fill(128);
+    return { width, height, rgb };
+  }
+
+  function pixelAt(result: { rgb: Uint8Array }, x: number, y: number): number[] {
+    const o = (y * 800 + x) * 3;
+    return [result.rgb[o]!, result.rgb[o + 1]!, result.rgb[o + 2]!];
+  }
+
+  it('reports the cover-fit rectangle it applied by default', () => {
+    const result = normaliseToProfile(greySource(1600, 1600), { profile });
+    // 5:3 window inside a square: full width, centred vertically.
+    assert.deepEqual(result.sourceRect, { x: 0, y: 320, width: 1600, height: 960 });
+  });
+
+  it('zooms in on the requested region', () => {
+    // Red left half, blue right half. Framing one half must fill the panel
+    // with that half alone, which pan-only cropping cannot do.
+    const source = horizontalSplitRgb(800, 480);
+    const left = normaliseToProfile(source, {
+      profile,
+      sourceRect: { x: 0, y: 0, width: 400, height: 240 },
+    });
+    const right = normaliseToProfile(source, {
+      profile,
+      sourceRect: { x: 400, y: 240, width: 400, height: 240 },
+    });
+    assert.deepEqual(pixelAt(left, 400, 240), [255, 0, 0]);
+    assert.deepEqual(pixelAt(left, 780, 20), [255, 0, 0]);
+    assert.deepEqual(pixelAt(right, 400, 240), [0, 0, 255]);
+  });
+
+  it('letterboxes with background when zoomed out past the image', () => {
+    // Three times the source in each axis, centred on it: the image occupies
+    // the middle third of the panel and background surrounds it.
+    const result = normaliseToProfile(greySource(800, 480), {
+      profile,
+      sourceRect: { x: -800, y: -480, width: 2400, height: 1440 },
+    });
+    assert.deepEqual(pixelAt(result, 5, 240), [255, 255, 255]);
+    assert.deepEqual(pixelAt(result, 795, 240), [255, 255, 255]);
+    assert.deepEqual(pixelAt(result, 400, 240), [128, 128, 128]);
+  });
+
+  it('fills the letterbox with a caller-supplied background', () => {
+    const result = normaliseToProfile(greySource(800, 480), {
+      profile,
+      sourceRect: { x: -800, y: -480, width: 2400, height: 1440 },
+      background: { r: 0, g: 0, b: 0 },
+    });
+    assert.deepEqual(pixelAt(result, 5, 240), [0, 0, 0]);
+  });
+
+  it('grows a mismatched rectangle instead of distorting it', () => {
+    // A square selection cannot fill a 5:3 panel. Widening keeps the whole
+    // selection visible; squashing it vertically would distort the artwork.
+    const result = normaliseToProfile(greySource(1000, 1000), {
+      profile,
+      sourceRect: { x: 200, y: 200, width: 600, height: 600 },
+    });
+    assert.equal(result.sourceRect.height, 600);
+    assert.equal(result.sourceRect.width, 1000);
+    assert.equal(result.sourceRect.y, 200);
+    // Grown about the centre, so the original selection is still inside it.
+    assert.equal(result.sourceRect.x, 0);
+    assert.ok(result.sourceRect.x <= 200);
+    assert.ok(result.sourceRect.x + result.sourceRect.width >= 800);
+  });
+
+  it('is deterministic for the same rectangle', () => {
+    const source = greySource(1200, 700);
+    const rect = { x: 10.5, y: 20.25, width: 500, height: 300 };
+    const a = normaliseToProfile(source, { profile, sourceRect: rect });
+    const b = normaliseToProfile(source, { profile, sourceRect: rect });
+    assert.deepEqual(a.rgb, b.rgb);
+  });
+
+  it('rejects supplying both crop and sourceRect', () => {
+    assert.throws(
+      () =>
+        normaliseToProfile(greySource(100, 100), {
+          profile,
+          crop: { x: 0, y: 0 },
+          sourceRect: { x: 0, y: 0, width: 50, height: 30 },
+        }),
+      (error: unknown) => error instanceof ImageIngestError && error.code === 'INVALID_CROP',
+    );
+  });
+
+  it('rejects a degenerate or non-finite rectangle', () => {
+    for (const rect of [
+      { x: 0, y: 0, width: 0, height: 10 },
+      { x: 0, y: 0, width: 10, height: -5 },
+      { x: Number.NaN, y: 0, width: 10, height: 6 },
+    ]) {
+      assert.throws(
+        () => normaliseToProfile(greySource(100, 100), { profile, sourceRect: rect }),
+        (error: unknown) => error instanceof ImageIngestError && error.code === 'INVALID_CROP',
+      );
+    }
+  });
+
+  it('rejects an out-of-range background channel', () => {
+    assert.throws(
+      () =>
+        normaliseToProfile(greySource(100, 100), { profile, background: { r: 256, g: 0, b: 0 } }),
+      (error: unknown) => error instanceof ImageIngestError && error.code === 'INVALID_CROP',
+    );
+  });
+});
+
 describe('fromRgbaImageData', () => {
   function rgbaCanvasPixels(width: number, height: number, rgba: readonly number[]) {
     const data = new Uint8ClampedArray(width * height * 4);

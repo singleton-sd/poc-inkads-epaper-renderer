@@ -69,7 +69,13 @@ class Canvas {
   }
 
   toProfileBuffer(): ProfileRgbBuffer {
-    return { profileId: profile.id, width: this.width, height: this.height, rgb: this.rgb };
+    return {
+      profileId: profile.id,
+      width: this.width,
+      height: this.height,
+      rgb: this.rgb,
+      sourceRect: { x: 0, y: 0, width: this.width, height: this.height },
+    };
   }
 }
 
