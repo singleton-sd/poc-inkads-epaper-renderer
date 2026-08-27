@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.0.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.4.0...1.0.0) (2026-08-27)
+
+### ⚠ BREAKING CHANGES
+
+* decodeImage, ingestImageToProfile and encodePreviewPng
+now import from @singleton-sd/inkads-epaper-renderer/node.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+### Bug Fixes
+
+* [#21](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/21) Narrow browser limits to enforceable ones ([a835201](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/a83520134edd6dcdf68d3b4b8ff1aba8faec9cd2))
+
+### Code Refactoring
+
+* [#21](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/21) Split browser and Node entry points ([037cadf](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/037cadffc3bdaaf50727ebdbafa9994341e4b232))
+
 ## [0.4.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.3.0...0.4.0) (2026-08-27)
 
 ### Features
