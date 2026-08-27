@@ -6,13 +6,8 @@ import { defineDisplayProfile, waveshare75BwProfile } from '../display-profile/i
 import { decodeImage } from '../ingest/index.js';
 import { renderMono } from '../mono/index.js';
 import { RENDERER_VERSION } from '../version.js';
-import {
-  crc32Hex,
-  encodePreviewPng,
-  FramebufferPackError,
-  packMonoBitmap,
-  toPreviewImage,
-} from './index.js';
+import { crc32Hex, FramebufferPackError, packMonoBitmap, toPreviewImage } from './index.js';
+import { encodePreviewPng } from './preview-png.js';
 import type { PackSource } from './types.js';
 
 const profile = waveshare75BwProfile;

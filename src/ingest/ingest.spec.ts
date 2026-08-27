@@ -9,6 +9,7 @@ import {
   decodeImage,
   ingestImageToProfile,
   normaliseToProfile,
+  fromRgbaImageData,
 } from './index.js';
 import { waveshare75BwProfile } from '../display-profile/index.js';
 
@@ -377,5 +378,47 @@ describe('ingestImageToProfile', () => {
     });
     assert.equal(result.width, 800);
     assert.equal(result.height, 480);
+  });
+});
+
+describe('fromRgbaImageData', () => {
+  function rgbaCanvasPixels(width: number, height: number, rgba: readonly number[]) {
+    const data = new Uint8ClampedArray(width * height * 4);
+    for (let i = 0; i < width * height; i += 1) {
+      data.set(rgba, i * 4);
+    }
+    return { width, height, data };
+  }
+
+  it('adopts opaque canvas pixels as RGB', () => {
+    const decoded = fromRgbaImageData(rgbaCanvasPixels(4, 3, [10, 20, 30, 255]));
+    assert.equal(decoded.width, 4);
+    assert.equal(decoded.height, 3);
+    assert.equal(decoded.rgb.length, 4 * 3 * 3);
+    assert.deepEqual([...decoded.rgb.slice(0, 3)], [10, 20, 30]);
+  });
+
+  it('composites transparency onto white, matching decodeImage', () => {
+    const decoded = fromRgbaImageData(rgbaCanvasPixels(1, 1, [0, 0, 0, 0]));
+    assert.deepEqual([...decoded.rgb], [255, 255, 255]);
+  });
+
+  it('rejects a buffer that does not match the stated dimensions', () => {
+    assert.throws(
+      () => fromRgbaImageData({ width: 4, height: 4, data: new Uint8ClampedArray(8) }),
+      (error: unknown) => error instanceof ImageIngestError && error.code === 'INVALID_IMAGE',
+    );
+  });
+
+  it('does not accept an encoded-size ceiling it cannot enforce', () => {
+    // @ts-expect-error maxByteLength bounds encoded uploads, not decoded pixels.
+    fromRgbaImageData(rgbaCanvasPixels(1, 1, [0, 0, 0, 255]), { limits: { maxByteLength: 1 } });
+  });
+
+  it('applies the same pixel ceilings as decodeImage', () => {
+    assert.throws(
+      () => fromRgbaImageData(rgbaCanvasPixels(4, 4, [0, 0, 0, 255]), { limits: { maxPixels: 4 } }),
+      (error: unknown) => error instanceof ImageIngestError && error.code === 'IMAGE_TOO_LARGE',
+    );
   });
 });
