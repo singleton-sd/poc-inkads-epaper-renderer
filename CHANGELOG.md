@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.1.0...0.2.0) (2026-08-27)
+
+### Features
+
+* [#3](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/3) Decode PNG/JPEG and cover-fit crop/resize to profile ([8eb4c41](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/8eb4c414dea72111f4d32d4556710a9772d87698))
+* [#4](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/4) Add threshold and dither mono modes ([3cf53d7](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/3cf53d74687753aa06f3bb2b0db860cd66a4920f))
+
 ## [0.1.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.0.4...0.1.0) (2026-08-26)
 
 ### Features
