@@ -195,6 +195,56 @@ describe('normaliseToProfile', () => {
     assert.notDeepEqual(top.rgb, bottom.rgb);
   });
 
+  it('averages source pixels when downscaling instead of sampling one', () => {
+    // 1-pixel vertical stripes: nearest-neighbour would return pure black or
+    // pure white, area averaging returns mid grey.
+    const width = 1600;
+    const height = 960;
+    const rgb = new Uint8Array(width * height * 3);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const v = x % 2 === 0 ? 0 : 255;
+        const o = (y * width + x) * 3;
+        rgb[o] = v;
+        rgb[o + 1] = v;
+        rgb[o + 2] = v;
+      }
+    }
+    const result = normaliseToProfile({ width, height, rgb }, { profile: waveshare75BwProfile });
+    for (const channel of centrePixel(result)) {
+      assert.ok(
+        channel > 100 && channel < 155,
+        `expected an averaged mid grey, got ${String(channel)}`,
+      );
+    }
+  });
+
+  it('stays deterministic when downscaling', () => {
+    const width = 1600;
+    const height = 960;
+    const rgb = new Uint8Array(width * height * 3);
+    for (let i = 0; i < rgb.length; i += 1) {
+      rgb[i] = (i * 37) % 256;
+    }
+    const source = { width, height, rgb };
+    const a = normaliseToProfile(source, { profile: waveshare75BwProfile });
+    const b = normaliseToProfile(source, { profile: waveshare75BwProfile });
+    assert.deepEqual(a.rgb, b.rgb);
+  });
+
+  it('still uses nearest-neighbour when upscaling', () => {
+    // 2×2 black/white blocks upscaled: output must stay pure, never blended.
+    const source = horizontalSplitRgb(2, 2);
+    const result = normaliseToProfile(source, { profile: waveshare75BwProfile });
+    const shades = new Set<string>();
+    for (let i = 0; i < result.rgb.length; i += 3) {
+      shades.add(
+        `${String(result.rgb[i])},${String(result.rgb[i + 1])},${String(result.rgb[i + 2])}`,
+      );
+    }
+    assert.deepEqual([...shades].sort(), ['0,0,255', '255,0,0']);
+  });
+
   it('rejects crop offsets outside 0..1', () => {
     const source = decodeImage(solidPng(8, 8, [1, 2, 3]));
     assert.throws(

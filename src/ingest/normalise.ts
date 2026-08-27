@@ -34,8 +34,50 @@ function sampleNearest(
 }
 
 /**
+ * Average every source pixel covered by one output pixel.
+ *
+ * Nearest-neighbour discards almost all source pixels when downscaling a
+ * multi-megapixel upload, and the dither stage turns that aliasing into
+ * visible noise. Summing in fixed order keeps the result deterministic.
+ */
+function sampleAreaAverage(
+  source: DecodedImage,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  out: Uint8Array,
+  outOffset: number,
+): void {
+  const startX = Math.max(0, Math.floor(x0));
+  const startY = Math.max(0, Math.floor(y0));
+  const endX = Math.min(source.width, Math.max(startX + 1, Math.ceil(x1)));
+  const endY = Math.min(source.height, Math.max(startY + 1, Math.ceil(y1)));
+
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let count = 0;
+  for (let y = startY; y < endY; y += 1) {
+    for (let x = startX; x < endX; x += 1) {
+      const i = (y * source.width + x) * 3;
+      r += source.rgb[i]!;
+      g += source.rgb[i + 1]!;
+      b += source.rgb[i + 2]!;
+      count += 1;
+    }
+  }
+
+  out[outOffset] = Math.round(r / count);
+  out[outOffset + 1] = Math.round(g / count);
+  out[outOffset + 2] = Math.round(b / count);
+}
+
+/**
  * Cover-fit crop then resize to the display profile dimensions.
- * Deterministic nearest-neighbour sampling for identical outputs across runs.
+ *
+ * Downscaling averages the covered source area; upscaling repeats the nearest
+ * pixel. Both are deterministic: identical input and crop yield identical bytes.
  */
 export function normaliseToProfile(
   source: DecodedImage,
@@ -60,12 +102,24 @@ export function normaliseToProfile(
   const originX = maxOffsetX * cropX;
   const originY = maxOffsetY * cropY;
 
+  const stepX = cropW / targetW;
+  const stepY = cropH / targetH;
+  // Averaging only helps when an output pixel covers more than one source pixel.
+  const downscaling = stepX > 1 || stepY > 1;
+
   const rgb = new Uint8Array(targetW * targetH * 3);
   for (let y = 0; y < targetH; y += 1) {
     for (let x = 0; x < targetW; x += 1) {
-      const sx = originX + ((x + 0.5) * cropW) / targetW - 0.5;
-      const sy = originY + ((y + 0.5) * cropH) / targetH - 0.5;
-      sampleNearest(source, sx, sy, rgb, (y * targetW + x) * 3);
+      const outOffset = (y * targetW + x) * 3;
+      if (downscaling) {
+        const x0 = originX + x * stepX;
+        const y0 = originY + y * stepY;
+        sampleAreaAverage(source, x0, y0, x0 + stepX, y0 + stepY, rgb, outOffset);
+      } else {
+        const sx = originX + (x + 0.5) * stepX - 0.5;
+        const sy = originY + (y + 0.5) * stepY - 0.5;
+        sampleNearest(source, sx, sy, rgb, outOffset);
+      }
     }
   }
 
