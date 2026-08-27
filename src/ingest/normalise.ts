@@ -34,11 +34,15 @@ function sampleNearest(
 }
 
 /**
- * Average every source pixel covered by one output pixel.
+ * Average the source pixels covered by one output pixel, weighting each by how
+ * much of it the output footprint actually overlaps.
  *
  * Nearest-neighbour discards almost all source pixels when downscaling a
  * multi-megapixel upload, and the dither stage turns that aliasing into
- * visible noise. Summing in fixed order keeps the result deterministic.
+ * visible noise. Footprints are rarely integral — 1200×720 into 800×480 is
+ * 1.5 source pixels per output pixel — so edge pixels must contribute in
+ * proportion to their coverage. Summing in fixed order keeps this
+ * deterministic.
  */
 function sampleAreaAverage(
   source: DecodedImage,
@@ -49,28 +53,46 @@ function sampleAreaAverage(
   out: Uint8Array,
   outOffset: number,
 ): void {
-  const startX = Math.max(0, Math.floor(x0));
-  const startY = Math.max(0, Math.floor(y0));
-  const endX = Math.min(source.width, Math.max(startX + 1, Math.ceil(x1)));
-  const endY = Math.min(source.height, Math.max(startY + 1, Math.ceil(y1)));
+  const left = Math.max(0, x0);
+  const top = Math.max(0, y0);
+  const right = Math.min(source.width, x1);
+  const bottom = Math.min(source.height, y1);
+  const startX = Math.min(source.width - 1, Math.floor(left));
+  const startY = Math.min(source.height - 1, Math.floor(top));
+  const endX = Math.max(startX + 1, Math.ceil(right));
+  const endY = Math.max(startY + 1, Math.ceil(bottom));
 
   let r = 0;
   let g = 0;
   let b = 0;
-  let count = 0;
+  let totalWeight = 0;
   for (let y = startY; y < endY; y += 1) {
+    const rowOverlap = Math.min(y + 1, bottom) - Math.max(y, top);
+    if (rowOverlap <= 0) {
+      continue;
+    }
     for (let x = startX; x < endX; x += 1) {
+      const columnOverlap = Math.min(x + 1, right) - Math.max(x, left);
+      if (columnOverlap <= 0) {
+        continue;
+      }
+      const weight = rowOverlap * columnOverlap;
       const i = (y * source.width + x) * 3;
-      r += source.rgb[i]!;
-      g += source.rgb[i + 1]!;
-      b += source.rgb[i + 2]!;
-      count += 1;
+      r += source.rgb[i]! * weight;
+      g += source.rgb[i + 1]! * weight;
+      b += source.rgb[i + 2]! * weight;
+      totalWeight += weight;
     }
   }
 
-  out[outOffset] = Math.round(r / count);
-  out[outOffset + 1] = Math.round(g / count);
-  out[outOffset + 2] = Math.round(b / count);
+  if (totalWeight === 0) {
+    sampleNearest(source, (left + right) / 2 - 0.5, (top + bottom) / 2 - 0.5, out, outOffset);
+    return;
+  }
+
+  out[outOffset] = Math.round(r / totalWeight);
+  out[outOffset + 1] = Math.round(g / totalWeight);
+  out[outOffset + 2] = Math.round(b / totalWeight);
 }
 
 /**
