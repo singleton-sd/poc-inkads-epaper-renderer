@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.3.0...0.4.0) (2026-08-27)
+
+### Features
+
+* [#19](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/19) Average source pixels when downscaling ([10a351d](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/10a351dad0ce25c38faa95e8d0447694f2949c82))
+
+### Bug Fixes
+
+* [#19](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/19) Weight partly covered pixels by overlap area ([f909b20](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/f909b20869f352c13cbd04c8f02ec30f9be039b2))
+* [#20](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/20) Guard decodeImage against oversized uploads ([e715a65](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/e715a650997af40f43d48ef04b8fcd8de509ff32))
+* [#20](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/20) Validate limit overrides and freeze defaults ([7a08d37](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/7a08d372da8d8be1d54805e47b94f8a957f7e346))
+
 ## [0.3.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/0.2.0...0.3.0) (2026-08-27)
 
 ### Features
