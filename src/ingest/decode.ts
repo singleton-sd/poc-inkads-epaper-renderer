@@ -3,6 +3,12 @@ import { decode as decodeJpeg } from 'jpeg-js';
 import { PNG } from 'pngjs';
 
 import { ImageIngestError } from './errors.js';
+import {
+  assertWithinByteLimit,
+  assertWithinPixelLimits,
+  resolveLimits,
+  type DecodeLimits,
+} from './limits.js';
 import type { DecodedImage } from './types.js';
 
 function toUint8Array(input: ArrayBuffer | Uint8Array): Uint8Array {
@@ -32,7 +38,46 @@ function sniffFormat(bytes: Uint8Array): 'png' | 'jpeg' | null {
   return null;
 }
 
-function decodePng(bytes: Uint8Array): DecodedImage {
+/** PNG IHDR puts width and height at fixed offsets, ahead of the pixel data. */
+function readPngHeaderSize(bytes: Uint8Array): { width: number; height: number } | null {
+  if (bytes.length < 24) {
+    return null;
+  }
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return { width: view.getUint32(16), height: view.getUint32(20) };
+}
+
+/** Walk JPEG markers to the first frame header (SOFn) for its dimensions. */
+function readJpegHeaderSize(bytes: Uint8Array): { width: number; height: number } | null {
+  let offset = 2;
+  while (offset + 9 < bytes.length) {
+    if (bytes[offset] !== 0xff) {
+      return null;
+    }
+    const marker = bytes[offset + 1]!;
+    const segmentLength = (bytes[offset + 2]! << 8) | bytes[offset + 3]!;
+    // SOF0–SOF15, excluding the non-frame markers DHT (0xc4), JPG (0xc8), DAC (0xcc).
+    const isFrameHeader =
+      marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc;
+    if (isFrameHeader) {
+      const height = (bytes[offset + 5]! << 8) | bytes[offset + 6]!;
+      const width = (bytes[offset + 7]! << 8) | bytes[offset + 8]!;
+      return { width, height };
+    }
+    if (segmentLength < 2) {
+      return null;
+    }
+    offset += 2 + segmentLength;
+  }
+  return null;
+}
+
+function decodePng(bytes: Uint8Array, limits: DecodeLimits): DecodedImage {
+  const header = readPngHeaderSize(bytes);
+  if (header) {
+    assertWithinPixelLimits(header.width, header.height, limits);
+  }
+
   let png: PNG;
   try {
     png = PNG.sync.read(Buffer.from(bytes));
@@ -43,6 +88,7 @@ function decodePng(bytes: Uint8Array): DecodedImage {
     );
   }
 
+  assertWithinPixelLimits(png.width, png.height, limits);
   return {
     width: png.width,
     height: png.height,
@@ -50,10 +96,15 @@ function decodePng(bytes: Uint8Array): DecodedImage {
   };
 }
 
-function decodeJpegBytes(bytes: Uint8Array): DecodedImage {
+function decodeJpegBytes(bytes: Uint8Array, limits: DecodeLimits): DecodedImage {
+  const header = readJpegHeaderSize(bytes);
+  if (header) {
+    assertWithinPixelLimits(header.width, header.height, limits);
+  }
+
   let decoded: { width: number; height: number; data: Uint8Array };
   try {
-    decoded = decodeJpeg(bytes, { useTArray: true });
+    decoded = decodeJpeg(bytes, { useTArray: true, maxMemoryUsageInMB: 512 });
   } catch (error) {
     throw new ImageIngestError(
       'INVALID_JPEG',
@@ -61,6 +112,7 @@ function decodeJpegBytes(bytes: Uint8Array): DecodedImage {
     );
   }
 
+  assertWithinPixelLimits(decoded.width, decoded.height, limits);
   return {
     width: decoded.width,
     height: decoded.height,
@@ -68,22 +120,35 @@ function decodeJpegBytes(bytes: Uint8Array): DecodedImage {
   };
 }
 
+export type DecodeImageOptions = {
+  /** Override the ceilings applied to untrusted uploads. */
+  readonly limits?: Partial<DecodeLimits>;
+};
+
 /**
  * Decode PNG or JPEG bytes into an RGB buffer.
- * Accepts raw `ArrayBuffer` / `Uint8Array` for Node and browser consumers.
+ *
+ * Input is treated as untrusted: size limits are checked against the file
+ * header before the decoder allocates pixels. See `DEFAULT_DECODE_LIMITS`.
  */
-export function decodeImage(input: ArrayBuffer | Uint8Array): DecodedImage {
+export function decodeImage(
+  input: ArrayBuffer | Uint8Array,
+  options: DecodeImageOptions = {},
+): DecodedImage {
   const bytes = toUint8Array(input);
   if (bytes.length === 0) {
     throw new ImageIngestError('EMPTY_INPUT', 'image input is empty');
   }
 
+  const limits = resolveLimits(options.limits);
+  assertWithinByteLimit(bytes.length, limits);
+
   const format = sniffFormat(bytes);
   if (format === 'png') {
-    return decodePng(bytes);
+    return decodePng(bytes, limits);
   }
   if (format === 'jpeg') {
-    return decodeJpegBytes(bytes);
+    return decodeJpegBytes(bytes, limits);
   }
 
   throw new ImageIngestError('UNSUPPORTED_FORMAT', 'only PNG and JPEG inputs are supported');
