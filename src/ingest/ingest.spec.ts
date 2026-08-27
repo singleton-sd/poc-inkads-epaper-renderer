@@ -4,6 +4,7 @@ import { encode as encodeJpeg } from 'jpeg-js';
 import { PNG } from 'pngjs';
 
 import {
+  DEFAULT_DECODE_LIMITS,
   ImageIngestError,
   decodeImage,
   ingestImageToProfile,
@@ -126,6 +127,89 @@ describe('decodeImage', () => {
         return true;
       },
     );
+  });
+
+  it('rejects a PNG whose header exceeds the pixel limit', () => {
+    // Header claims 30000×30000 (~3.6 GB decoded) but carries no pixel data,
+    // so this only passes if the guard runs before decoding.
+    const bytes = solidPng(2, 2, [0, 0, 0]);
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    view.setUint32(16, 30_000);
+    view.setUint32(20, 30_000);
+    assert.throws(
+      () => decodeImage(bytes),
+      (error: unknown) => {
+        assert.ok(error instanceof ImageIngestError);
+        assert.equal(error.code, 'IMAGE_TOO_LARGE');
+        return true;
+      },
+    );
+  });
+
+  it('rejects input larger than the byte limit', () => {
+    const bytes = solidPng(64, 64, [1, 2, 3]);
+    assert.throws(
+      () => decodeImage(bytes, { limits: { maxByteLength: 8 } }),
+      (error: unknown) => {
+        assert.ok(error instanceof ImageIngestError);
+        assert.equal(error.code, 'INPUT_TOO_LARGE');
+        return true;
+      },
+    );
+  });
+
+  it('honours a caller-supplied pixel limit', () => {
+    const bytes = solidPng(64, 64, [1, 2, 3]);
+    assert.throws(
+      () => decodeImage(bytes, { limits: { maxPixels: 100 } }),
+      (error: unknown) => {
+        assert.ok(error instanceof ImageIngestError);
+        assert.equal(error.code, 'IMAGE_TOO_LARGE');
+        return true;
+      },
+    );
+    assert.doesNotThrow(() => decodeImage(bytes));
+  });
+
+  it('applies limits through ingestImageToProfile', () => {
+    assert.throws(
+      () =>
+        ingestImageToProfile(solidPng(64, 64, [1, 2, 3]), {
+          profile: waveshare75BwProfile,
+          limits: { maxPixels: 100 },
+        }),
+      ImageIngestError,
+    );
+  });
+
+  it('rejects malformed limit overrides instead of disabling the guard', () => {
+    const bytes = solidPng(8, 8, [0, 0, 0]);
+    for (const limits of [
+      { maxPixels: 0 },
+      { maxPixels: -1 },
+      { maxByteLength: Number.NaN },
+      { maxDimension: 1.5 },
+      { maxPixels: Number.POSITIVE_INFINITY },
+    ]) {
+      assert.throws(
+        () => decodeImage(bytes, { limits }),
+        (error: unknown) => {
+          assert.ok(error instanceof ImageIngestError);
+          assert.equal(error.code, 'INVALID_LIMITS');
+          return true;
+        },
+        `expected ${JSON.stringify(limits)} to be rejected`,
+      );
+    }
+  });
+
+  it('exposes frozen defaults so callers cannot weaken them globally', () => {
+    assert.ok(Object.isFrozen(DEFAULT_DECODE_LIMITS));
+  });
+
+  it('defaults leave realistic creatives untouched', () => {
+    assert.ok(DEFAULT_DECODE_LIMITS.maxPixels > 800 * 480);
+    assert.doesNotThrow(() => decodeImage(solidJpeg(64, 64, [10, 20, 30])));
   });
 
   it('rejects empty input', () => {

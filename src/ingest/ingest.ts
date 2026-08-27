@@ -1,4 +1,4 @@
-import { decodeImage } from './decode.js';
+import { decodeImage, type DecodeImageOptions } from './decode.js';
 import type { NormaliseToProfileOptions, ProfileRgbBuffer } from './types.js';
 import { normaliseToProfile } from './normalise.js';
 
@@ -7,8 +7,8 @@ import { normaliseToProfile } from './normalise.js';
  */
 export function ingestImageToProfile(
   input: ArrayBuffer | Uint8Array,
-  options: NormaliseToProfileOptions,
+  options: NormaliseToProfileOptions & DecodeImageOptions,
 ): ProfileRgbBuffer {
-  const decoded = decodeImage(input);
+  const decoded = decodeImage(input, { ...(options.limits ? { limits: options.limits } : {}) });
   return normaliseToProfile(decoded, options);
 }

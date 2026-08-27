@@ -31,6 +31,7 @@ export type {
 
 export {
   decodeImage,
+  DEFAULT_DECODE_LIMITS,
   ImageIngestError,
   ingestImageToProfile,
   normaliseToProfile,
@@ -39,6 +40,8 @@ export {
 export type {
   CropPosition,
   DecodedImage,
+  DecodeImageOptions,
+  DecodeLimits,
   NormaliseToProfileOptions,
   ProfileRgbBuffer,
 } from './ingest/index.js';
