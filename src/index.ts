@@ -44,7 +44,7 @@ export { DEFAULT_DECODE_LIMITS } from './ingest/limits.js';
 export type { DecodeLimits } from './ingest/limits.js';
 export { normaliseToProfile } from './ingest/normalise.js';
 export { fromRgbaImageData } from './ingest/rgba.js';
-export type { RgbaImageData } from './ingest/rgba.js';
+export type { FromRgbaLimits, RgbaImageData } from './ingest/rgba.js';
 
 export type {
   CropPosition,

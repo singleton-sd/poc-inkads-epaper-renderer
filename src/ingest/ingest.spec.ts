@@ -410,6 +410,11 @@ describe('fromRgbaImageData', () => {
     );
   });
 
+  it('does not accept an encoded-size ceiling it cannot enforce', () => {
+    // @ts-expect-error maxByteLength bounds encoded uploads, not decoded pixels.
+    fromRgbaImageData(rgbaCanvasPixels(1, 1, [0, 0, 0, 255]), { limits: { maxByteLength: 1 } });
+  });
+
   it('applies the same pixel ceilings as decodeImage', () => {
     assert.throws(
       () => fromRgbaImageData(rgbaCanvasPixels(4, 4, [0, 0, 0, 255]), { limits: { maxPixels: 4 } }),

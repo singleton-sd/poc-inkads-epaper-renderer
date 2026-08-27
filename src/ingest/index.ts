@@ -6,7 +6,7 @@ export type { DecodeLimits } from './limits.js';
 export { ingestImageToProfile } from './ingest.js';
 export { normaliseToProfile } from './normalise.js';
 export { fromRgbaImageData } from './rgba.js';
-export type { RgbaImageData } from './rgba.js';
+export type { FromRgbaLimits, RgbaImageData } from './rgba.js';
 export type {
   CropPosition,
   DecodedImage,
