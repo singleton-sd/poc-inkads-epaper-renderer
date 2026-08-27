@@ -29,6 +29,24 @@ export type {
   PixelPacking,
 } from './display-profile/index.js';
 
+export {
+  decodeImage,
+  ImageIngestError,
+  ingestImageToProfile,
+  normaliseToProfile,
+} from './ingest/index.js';
+
+export type {
+  CropPosition,
+  DecodedImage,
+  NormaliseToProfileOptions,
+  ProfileRgbBuffer,
+} from './ingest/index.js';
+
+export { MonoRenderError, renderMono, rgbToLuma } from './mono/index.js';
+
+export type { MonoBitmap, MonoRenderMode, MonoSource, RenderMonoOptions } from './mono/index.js';
+
 export type RendererStub = {
   readonly packageName: typeof RENDERER_PACKAGE_NAME;
   readonly version: string;
