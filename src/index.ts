@@ -58,6 +58,7 @@ export {
 export type {
   FramebufferMetadata,
   PackedFramebuffer,
+  PackErrorCode,
   PackMonoBitmapOptions,
   PackSource,
   PreviewImage,

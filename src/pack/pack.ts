@@ -29,6 +29,22 @@ function validate(source: PackSource, profile: DisplayProfile): void {
       `profile ${profile.id} uses unsupported packing ${profile.pixelPacking}@${profile.bitsPerPixel}bpp`,
     );
   }
+  // Profile validation rounds the packed size up, so a width that is not a
+  // multiple of 8 would give a fractional bytes-per-row and corrupt every
+  // row offset below.
+  if (profile.width % 8 !== 0) {
+    throw new FramebufferPackError(
+      'UNSUPPORTED_PACKING',
+      `profile width ${profile.width} must be a multiple of 8 for row-major 1bpp packing`,
+    );
+  }
+  const expectedPackedByteLength = (profile.width / 8) * profile.height;
+  if (profile.packedByteLength !== expectedPackedByteLength) {
+    throw new FramebufferPackError(
+      'PACKED_LENGTH_MISMATCH',
+      `profile declares ${profile.packedByteLength} packed bytes but ${profile.width}×${profile.height} needs ${expectedPackedByteLength}`,
+    );
+  }
   if (profile.orientation !== 'native') {
     // Rotations stay unimplemented until physical validation (issue #8).
     throw new FramebufferPackError(

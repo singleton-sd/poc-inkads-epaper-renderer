@@ -131,6 +131,51 @@ describe('packMonoBitmap', () => {
     );
   });
 
+  it('rejects a width that is not byte-aligned', () => {
+    // computePackedByteLength rounds up, so a 100px-wide profile is valid but
+    // would give a fractional 12.5 bytes per row here.
+    const misaligned = defineDisplayProfile({
+      ...profile,
+      label: 'Misaligned',
+      width: 100,
+      height: 60,
+      aspectRatio: { width: 5, height: 3 },
+      packedByteLength: 750,
+    });
+    const source: PackSource = {
+      profileId: misaligned.id,
+      width: 100,
+      height: 60,
+      mode: 'threshold',
+      pixels: new Uint8Array(100 * 60),
+    };
+    assert.throws(
+      () => packMonoBitmap(source, { profile: misaligned }),
+      (error: unknown) => {
+        assert.ok(error instanceof FramebufferPackError);
+        assert.equal(error.code, 'UNSUPPORTED_PACKING');
+        return true;
+      },
+    );
+  });
+
+  it('rejects a profile whose packedByteLength contradicts its dimensions', () => {
+    // Bypasses defineDisplayProfile the way a hand-built profile object would.
+    const inconsistent = { ...profile, packedByteLength: 1_000 };
+    assert.throws(
+      () =>
+        packMonoBitmap(
+          bitmapOf(() => 1),
+          { profile: inconsistent },
+        ),
+      (error: unknown) => {
+        assert.ok(error instanceof FramebufferPackError);
+        assert.equal(error.code, 'PACKED_LENGTH_MISMATCH');
+        return true;
+      },
+    );
+  });
+
   it('rejects unimplemented orientations', () => {
     const rotated = defineDisplayProfile({ ...profile, orientation: 'rotate-90' });
     assert.throws(
@@ -158,6 +203,43 @@ describe('toPreviewImage', () => {
     assert.equal(preview.data.length, 800 * 480 * 4);
     assert.deepEqual([...preview.data.slice(0, 4)], [0, 0, 0, 255]);
     assert.deepEqual([...preview.data.slice(8 * 4, 8 * 4 + 4)], [255, 255, 255, 255]);
+  });
+
+  it('rejects a profile that differs only in polarity', () => {
+    // Same id and byte length, but rendering it would invert every shade.
+    const packed = packMonoBitmap(
+      bitmapOf(() => 1),
+      { profile },
+    );
+    const inverted = defineDisplayProfile({ ...profile, polarity: 'inverted' });
+    assert.throws(
+      () => toPreviewImage(packed, inverted),
+      (error: unknown) => {
+        assert.ok(error instanceof FramebufferPackError);
+        assert.equal(error.code, 'PROFILE_MISMATCH');
+        return true;
+      },
+    );
+  });
+
+  it('rejects a rotated profile rather than previewing it as native', () => {
+    const rotated = defineDisplayProfile({ ...profile, orientation: 'rotate-90' });
+    const packed = packMonoBitmap(
+      bitmapOf(() => 1),
+      { profile },
+    );
+    const rotatedMetadata = {
+      bytes: packed.bytes,
+      metadata: { ...packed.metadata, orientation: rotated.orientation },
+    };
+    assert.throws(
+      () => toPreviewImage(rotatedMetadata, rotated),
+      (error: unknown) => {
+        assert.ok(error instanceof FramebufferPackError);
+        assert.equal(error.code, 'UNSUPPORTED_ORIENTATION');
+        return true;
+      },
+    );
   });
 
   it('encodes a PNG that decodes back to the same shades', () => {

@@ -12,10 +12,27 @@ export type PreviewImage = {
 };
 
 function assertMatchesProfile(packed: PackedFramebuffer, profile: DisplayProfile): void {
-  if (packed.metadata.profileId !== profile.id) {
+  // Every field below changes how bits map to shades, so an id match alone is
+  // not enough: a profile differing only in polarity would invert the preview.
+  const { metadata } = packed;
+  if (
+    metadata.profileId !== profile.id ||
+    metadata.width !== profile.width ||
+    metadata.height !== profile.height ||
+    metadata.bitsPerPixel !== profile.bitsPerPixel ||
+    metadata.pixelPacking !== profile.pixelPacking ||
+    metadata.orientation !== profile.orientation ||
+    metadata.polarity !== profile.polarity
+  ) {
     throw new FramebufferPackError(
       'PROFILE_MISMATCH',
-      `framebuffer profile ${packed.metadata.profileId} does not match ${profile.id}`,
+      `framebuffer metadata (${metadata.profileId}) does not match profile ${profile.id}`,
+    );
+  }
+  if (profile.orientation !== 'native') {
+    throw new FramebufferPackError(
+      'UNSUPPORTED_ORIENTATION',
+      `orientation ${profile.orientation} is not implemented yet`,
     );
   }
   if (packed.bytes.length !== profile.packedByteLength) {
