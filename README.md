@@ -20,7 +20,28 @@ with golden fixtures pinning the output byte for byte. The public API below is
 settled; validation against physical hardware (#8) and colour panels (#9)
 remain open, and orientation is provisional until #8.
 
-Package name: `@singleton-sd/inkads-epaper-renderer` (not yet published; see issue #22).
+Published to the public npm registry as
+[`@singleton-sd/inkads-epaper-renderer`](https://www.npmjs.com/package/@singleton-sd/inkads-epaper-renderer).
+Each release on `main` bumps the version, tags, updates the changelog, creates a
+GitHub release, and publishes to npm.
+
+## Installing
+
+```bash
+pnpm add @singleton-sd/inkads-epaper-renderer
+# or: npm install @singleton-sd/inkads-epaper-renderer
+```
+
+The browser entry point is the package root; server-only decode/encode lives at
+`/node`:
+
+```ts
+import { renderMono, waveshare75BwProfile } from '@singleton-sd/inkads-epaper-renderer';
+import { ingestImageToProfile } from '@singleton-sd/inkads-epaper-renderer/node';
+```
+
+Pin a specific version in consumer `package.json` rather than a range while the
+API is still settling (`"1.1.1"` not `"^1.1.1"`).
 
 ## Requirements
 
@@ -54,8 +75,22 @@ Semantic versions are produced by `release-it` from Conventional Commits.
 
 On every push to `main` (except an existing `chore: Release …` commit), GitHub
 Actions runs `pnpm release:ci`. That bumps the version, updates `CHANGELOG.md`,
-pushes a semver tag, and creates a GitHub Release. npm publish stays off for
-now.
+pushes a semver tag, creates a GitHub Release, and publishes to the public npm
+registry.
+
+**Distribution:** public npm at `@singleton-sd/inkads-epaper-renderer`. Scoped
+packages default to private on npm; `publishConfig.access: public` in
+`package.json` overrides that.
+
+**One-time setup:** add an npm automation token as the `NPM_TOKEN` repository
+secret (Settings → Secrets and variables → Actions). The token needs publish
+access to the `@singleton-sd` org. Create it at
+https://www.npmjs.com/settings/~tokens (type: Automation). Do not commit tokens.
+
+After this PR merges, the next conventional commit on `main` triggers the first
+npm publish. To backfill an already-tagged version without a bump, a maintainer
+can run `pnpm build && npm publish --access public` locally with
+`NPM_TOKEN` set.
 
 Requires `release-it` ≥ 19.0.4 (Octokit logger fix for GitHub Releases).
 

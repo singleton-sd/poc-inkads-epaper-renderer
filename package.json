@@ -1,8 +1,8 @@
 {
   "name": "@singleton-sd/inkads-epaper-renderer",
   "version": "1.1.1",
-  "private": true,
   "description": "Shared TypeScript e-paper image renderer for InkAds",
+  "license": "UNLICENSED",
   "type": "module",
   "engines": {
     "node": ">=22.12.0"
@@ -16,6 +16,10 @@
     "url": "https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues"
   },
   "homepage": "https://github.com/singleton-sd/poc-inkads-epaper-renderer#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -30,6 +34,11 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
+    "!dist/**/*.spec.js",
+    "!dist/**/*.spec.js.map",
+    "!dist/**/*.spec.d.ts",
+    "!dist/**/*.spec.d.ts.map",
+    "!dist/fixtures/**",
     "README.md",
     "CHANGELOG.md"
   ],
@@ -41,6 +50,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "test": "pnpm build && node --test \"dist/**/*.spec.js\"",
+    "prepublishOnly": "pnpm build",
     "release": "release-it -VV --dry-run --ci",
     "release:ci": "release-it --ci",
     "worktree:add": "bash ./scripts/add-worktree.sh"
