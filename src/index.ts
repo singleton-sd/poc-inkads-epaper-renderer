@@ -15,8 +15,6 @@
  * barrel would pull the Node-only decoder back into the browser bundle.
  */
 
-export const RENDERER_PACKAGE_NAME = '@singleton-sd/inkads-epaper-renderer' as const;
-
 export {
   WAVESHARE_7_5_BW_ID,
   assertAspectRatioMatchesDimensions,
@@ -71,18 +69,3 @@ export type {
 } from './pack/index.js';
 
 export { RENDERER_VERSION } from './version.js';
-
-export type RendererStub = {
-  readonly packageName: typeof RENDERER_PACKAGE_NAME;
-  readonly version: string;
-};
-
-/**
- * Temporary helper retained for early consumers; prefer display profile exports.
- */
-export function createRendererStub(version = '0.0.0'): RendererStub {
-  return {
-    packageName: RENDERER_PACKAGE_NAME,
-    version,
-  };
-}

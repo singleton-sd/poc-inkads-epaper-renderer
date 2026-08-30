@@ -15,11 +15,12 @@ packed framebuffer bytes only.
 ## Status
 
 Proof of concept. The pipeline from upload to device-ready bytes is complete
-for the Waveshare 7.5″ B/W target: ingest → crop/resize → dither → pack.
-Golden fixtures (#7) and hardware validation (#8) are still open.
+for the Waveshare 7.5″ B/W target: ingest → crop/resize/zoom → dither → pack,
+with golden fixtures pinning the output byte for byte. The public API below is
+settled; validation against physical hardware (#8) and colour panels (#9)
+remain open, and orientation is provisional until #8.
 
-Package name: `@singleton-sd/inkads-epaper-renderer` (private until publish is
-enabled).
+Package name: `@singleton-sd/inkads-epaper-renderer` (not yet published; see issue #22).
 
 ## Requirements
 
@@ -88,6 +89,41 @@ gh release list
 
 The Release page should list the tag under
 https://github.com/singleton-sd/poc-inkads-epaper-renderer/releases.
+
+## The pipeline end to end
+
+Four stages take an advertiser upload to bytes the panel can display. Each is a
+separate export, so a caller can stop early (to show a preview) or re-run one
+stage (to re-dither without re-decoding).
+
+```ts
+import {
+  normaliseToProfile,
+  packMonoBitmap,
+  renderMono,
+  toPreviewImage,
+  waveshare75BwProfile as profile,
+} from '@singleton-sd/inkads-epaper-renderer';
+import { decodeImage } from '@singleton-sd/inkads-epaper-renderer/node';
+
+const decoded = decodeImage(uploadBytes); // 1. upload  → RGB pixels
+const framed = normaliseToProfile(decoded, { profile }); // 2. → 800×480
+const bitmap = renderMono(framed, { mode: 'atkinson' }); // 3. → 1-bit
+const packed = packMonoBitmap(bitmap, { profile }); // 4. → 48,000 bytes
+
+packed.bytes; // send to the device
+packed.metadata.checksum; // CRC-32, so firmware can verify the download
+toPreviewImage(packed, profile); // what the panel will actually show
+```
+
+Every stage is **deterministic**: the same input and options always produce
+byte-identical output, on any platform. That is what lets a browser preview be
+trusted as an exact prediction of the device result, and it is enforced by
+golden checksums over a set of representative creatives rather than by
+convention.
+
+Behaviour is driven by the **profile**, never by loose width/height arguments,
+so adding a panel cannot silently change how an existing one renders.
 
 ## Display profiles
 
@@ -227,6 +263,59 @@ const rgb = normaliseToProfile(decoded, { profile, crop: { x: 0.5, y: 0.5 } });
 
 `encodePreviewPng` is server-only for the same reason: in the browser, draw the
 `PreviewImage` to a canvas and use `canvas.toBlob()` when you need a file.
+
+## API reference
+
+Everything below is public and covered by semver. Anything not listed is
+internal and may change in a patch release; a test pins both lists, so an
+internal helper cannot leak out unnoticed.
+
+### Pipeline
+
+| Export                 | Entry   | Purpose                                                        |
+| ---------------------- | ------- | -------------------------------------------------------------- |
+| `decodeImage`          | `/node` | PNG/JPEG bytes → RGB, with limits applied to untrusted uploads |
+| `fromRgbaImageData`    | root    | Canvas RGBA → RGB, the browser's way in                        |
+| `normaliseToProfile`   | root    | Crop, zoom, and resize to the profile                          |
+| `ingestImageToProfile` | `/node` | `decodeImage` + `normaliseToProfile` in one call               |
+| `renderMono`           | root    | RGB → 1-bit bitmap via threshold or dithering                  |
+| `packMonoBitmap`       | root    | Bitmap → device-ready framebuffer plus metadata                |
+| `toPreviewImage`       | root    | Framebuffer → RGBA for a canvas                                |
+| `encodePreviewPng`     | `/node` | Preview → PNG file bytes                                       |
+| `crc32Hex`             | root    | The checksum firmware verifies against                         |
+
+### Profiles
+
+| Export                                                          | Purpose                            |
+| --------------------------------------------------------------- | ---------------------------------- |
+| `waveshare75BwProfile`, `WAVESHARE_7_5_BW_ID`                   | The only panel currently supported |
+| `getDisplayProfile`, `hasDisplayProfile`, `listDisplayProfiles` | Registry lookup                    |
+| `defineDisplayProfile`                                          | Define a custom panel              |
+| `computePackedByteLength`, `assertAspectRatioMatchesDimensions` | Helpers for defining one           |
+
+### Errors, limits, and metadata
+
+| Export                          | Purpose                                     |
+| ------------------------------- | ------------------------------------------- |
+| `ImageIngestError`              | Decode, limit, crop, and rectangle failures |
+| `MonoRenderError`               | Invalid mode, threshold, or buffer shape    |
+| `FramebufferPackError`          | Profile mismatch or unsupported packing     |
+| `DisplayProfileValidationError` | Invalid profile definition                  |
+| `DEFAULT_DECODE_LIMITS`         | Upload ceilings, overridable per call       |
+| `RENDERER_VERSION`              | Recorded in framebuffer metadata            |
+
+Each error carries a machine-readable `code`, so callers can branch on the
+cause — telling an advertiser their file is too large versus corrupt — rather
+than matching on message text.
+
+Exported types mirror these: `DisplayProfile`, `DisplayProfileId`,
+`DisplayProfileInput`, `AspectRatio`, `DisplayOrientation`, `DisplayPolarity`,
+`PixelPacking`, `DecodedImage`, `ProfileRgbBuffer`, `NormaliseToProfileOptions`,
+`CropPosition`, `SourceRect`, `RgbColour`, `DecodeLimits`, `FromRgbaLimits`,
+`RgbaImageData`, `MonoBitmap`, `MonoRenderMode`, `MonoSource`,
+`RenderMonoOptions`, `PackedFramebuffer`, `FramebufferMetadata`, `PackSource`,
+`PackMonoBitmapOptions`, `PackErrorCode`, and `PreviewImage`. The `/node` entry
+adds `DecodeImageOptions`.
 
 ## Related repositories
 
