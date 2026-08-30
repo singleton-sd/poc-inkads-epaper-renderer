@@ -20,8 +20,7 @@ with golden fixtures pinning the output byte for byte. The public API below is
 settled; validation against physical hardware (#8) and colour panels (#9)
 remain open, and orientation is provisional until #8.
 
-Package name: `@singleton-sd/inkads-epaper-renderer` (not yet published; see
-#22).
+Package name: `@singleton-sd/inkads-epaper-renderer` (not yet published; see issue #22).
 
 ## Requirements
 
