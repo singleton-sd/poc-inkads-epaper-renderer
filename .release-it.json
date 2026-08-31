@@ -10,9 +10,11 @@
     "tag": true
   },
   "npm": {
-    "publish": false
+    "publish": true,
+    "skipChecks": true
   },
   "hooks": {
+    "before:release": "pnpm lint && pnpm typecheck && pnpm test",
     "after:bump": "node ./scripts/sync-version.mjs"
   },
   "github": {
