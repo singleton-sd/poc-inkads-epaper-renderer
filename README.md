@@ -82,17 +82,22 @@ registry.
 packages default to private on npm; `publishConfig.access: public` in
 `package.json` overrides that.
 
-**One-time setup:** add an npm automation token as the `NPM_TOKEN` repository
-secret (Settings → Secrets and variables → Actions). The token needs publish
-access to the `@singleton-sd` org. Create it at
-https://www.npmjs.com/settings/~tokens (type: Automation). Do not commit tokens.
+**Publishing auth:** npm [Trusted Publishing](https://docs.npmjs.com/trusted-publishers/) (OIDC). The release workflow requests a short-lived GitHub OIDC token; npm validates it against a trusted publisher configured on npmjs.com. **No `NPM_TOKEN` or Azure Key Vault secret is used for publish.**
 
-After this PR merges, the next conventional commit on `main` triggers the first
-npm publish. To backfill an already-tagged version without a bump, a maintainer
-can run `pnpm build && npm publish --access public` locally with
-`NPM_TOKEN` set.
+One-time setup on npmjs.com (per package):
 
-Requires `release-it` ≥ 19.0.4 (Octokit logger fix for GitHub Releases).
+| Field                | Value                        |
+| -------------------- | ---------------------------- |
+| Organization or user | `singleton-sd`               |
+| Repository           | `poc-inkads-epaper-renderer` |
+| Workflow filename    | `release.yml`                |
+| Allowed actions      | `npm publish`                |
+
+Package → Settings → Trusted publishing → GitHub Actions. If the package does not exist on npm yet, a maintainer may need **one interactive publish with 2FA** before trusted publishing can take over.
+
+After the first successful OIDC publish, consider Package → Settings → Publishing access → **Require two-factor authentication and disallow tokens** so long-lived publish tokens cannot be used.
+
+Requires `release-it` ≥ 19.0.4 (Octokit logger fix for GitHub Releases) and npm CLI ≥ 11.5.1 (upgraded in the release workflow).
 
 Locally:
 

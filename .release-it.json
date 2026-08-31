@@ -10,7 +10,8 @@
     "tag": true
   },
   "npm": {
-    "publish": true
+    "publish": true,
+    "skipChecks": true
   },
   "hooks": {
     "before:release": "pnpm lint && pnpm typecheck && pnpm test",

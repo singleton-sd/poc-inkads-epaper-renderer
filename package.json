@@ -1,7 +1,7 @@
 {
   "name": "@singleton-sd/inkads-epaper-renderer",
   "version": "1.1.1",
-  "description": "Shared TypeScript e-paper image renderer for InkAds",
+  "description": "Converts advertiser artwork into display-ready e-paper framebuffers for InkAds — deterministic crop, dither, and pack for Waveshare 7.5″ B/W panels.",
   "license": "UNLICENSED",
   "type": "module",
   "engines": {
