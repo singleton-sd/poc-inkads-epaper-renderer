@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.1.1...1.1.2) (2026-09-09)
+
+### Bug Fixes
+
+* [#31](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/31) Drop setup-node registry-url for OIDC ([90758a1](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/90758a10e1e5e140612746408e85e69d131ca4a0)), closes [#22](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/22)
+* [#33](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/33) Drop publishConfig.registry for npm 12 ([eb01551](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/eb01551f4ba1ea9be091a10a6c2de60fcecac68b)), closes [#31](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/31)
+
 ## [1.1.1](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.1.0...1.1.1) (2026-08-30)
 
 ## [1.1.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.0.1...1.1.0) (2026-08-27)
