@@ -97,7 +97,16 @@ Package → Settings → Trusted publishing → GitHub Actions. If the package d
 
 After the first successful OIDC publish, consider Package → Settings → Publishing access → **Require two-factor authentication and disallow tokens** so long-lived publish tokens cannot be used.
 
-Requires `release-it` ≥ 19.0.4 (Octokit logger fix for GitHub Releases) and npm CLI ≥ 11.5.1 (upgraded in the release workflow).
+Requires `release-it` ≥ 19.0.4 (Octokit logger fix for GitHub Releases) and npm
+CLI ≥ 11.5.1. The release workflow pins `npm@11` (not unbounded `@latest`).
+
+Do **not** set `publishConfig.registry`. release-it passes it as one CLI token
+(`--registry https://…`); npm 12 then fails with `EUNKNOWNCONFIG` /
+`--//registry.npmjs.org`. Keep only `publishConfig.access: public` — the
+public registry is already the default.
+
+Do **not** pass `registry-url` to `actions/setup-node` in the release job
+either; that writes an auth `.npmrc` that short-circuits OIDC.
 
 `npm.skipChecks` is required for Trusted Publishing: release-it's preflight
 (`npm whoami`) expects a static token, but OIDC credentials only exist during
