@@ -40,14 +40,15 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      # Trusted Publishing requires npm CLI 11.5.1+; Node 22 ships an older one.
+      # Trusted Publishing needs npm ≥ 11.5.1. Pin to the 11.x line: npm@latest
+      # currently pulls 12.x, and release-it + publishConfig.registry previously
+      # produced a single argv token that npm 12 rejected as --//registry.npmjs.org.
       - name: Upgrade npm for OIDC publish
         run: |
           set -euo pipefail
-          npm install -g npm@latest
+          npm install -g npm@11
           npm --version
-          # Fail closed if a leftover auth rc would break publish the same way
-          # as Actions run 34353439637.
+          # Fail closed if a leftover auth rc would short-circuit OIDC.
           if [[ -f "$HOME/.npmrc" ]] && grep -qE 'always-auth|^//registry\.npmjs\.org' "$HOME/.npmrc"; then
             echo "Refusing to publish with an auth .npmrc that Trusted Publishing does not need:" >&2
             cat "$HOME/.npmrc" >&2
