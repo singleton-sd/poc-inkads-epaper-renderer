@@ -75,8 +75,8 @@ Semantic versions are produced by `release-it` from Conventional Commits.
 
 On every push to `main` (except an existing `chore: Release …` commit), GitHub
 Actions runs `pnpm release:ci`. That bumps the version, updates `CHANGELOG.md`,
-pushes a semver tag, creates a GitHub Release, and publishes to the public npm
-registry.
+pushes a semver tag, creates a GitHub Release (notes include the matching npmjs
+version link), and publishes to the public npm registry.
 
 **Distribution:** public npm at `@singleton-sd/inkads-epaper-renderer`. Scoped
 packages default to private on npm; `publishConfig.access: public` in
