@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.1.2...1.2.0) (2026-09-09)
+
+### Features
+
+* [#35](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/35) Add npmjs link to GitHub Release notes ([7bf64fb](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/7bf64fb93779d9f035735b41ce6ec2280dad1506))
+
 ## [1.1.2](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.1.1...1.1.2) (2026-09-09)
 
 ### Bug Fixes

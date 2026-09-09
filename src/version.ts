@@ -4,4 +4,4 @@
  * Kept in sync with `package.json` by a unit test; release-it bumps the
  * manifest, so update this constant in the same release commit.
  */
-export const RENDERER_VERSION = '1.1.2';
+export const RENDERER_VERSION = '1.2.0';
