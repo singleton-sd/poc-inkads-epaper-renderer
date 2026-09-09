@@ -99,11 +99,23 @@ After the first successful OIDC publish, consider Package → Settings → Publi
 
 Requires `release-it` ≥ 19.0.4 (Octokit logger fix for GitHub Releases) and npm CLI ≥ 11.5.1 (upgraded in the release workflow).
 
+`npm.skipChecks` is required for Trusted Publishing: release-it's preflight
+(`npm whoami`) expects a static token, but OIDC credentials only exist during
+`npm publish` inside the Actions job. Locally there is no OIDC token, so
+**`pnpm release:ci` must not be run on a developer machine** — it would either
+fail at publish or (if somehow authenticated another way) cut a release outside
+CI. Prefer the Actions workflow (`workflow_dispatch` or a push to `main`).
+
 Locally:
 
 ```sh
-pnpm release      # dry-run
-pnpm release:ci   # only from main; prefer the Actions workflow
+pnpm release      # dry-run only (no publish, no git push)
+```
+
+Bootstrap / first package creation (interactive, with 2FA):
+
+```sh
+pnpm build && npm publish --access public
 ```
 
 Never hand-edit `package.json` version.
@@ -372,5 +384,6 @@ applicable.
 
 ## License
 
-Proprietary — Singleton SD. This repository is public for PoC collaboration;
-do not commit secrets or commercially sensitive material.
+Proprietary — Singleton SD. See [`LICENSE`](./LICENSE). The package is public on
+npm for installability; that does not grant an open-source license. Do not
+commit secrets or commercially sensitive material.

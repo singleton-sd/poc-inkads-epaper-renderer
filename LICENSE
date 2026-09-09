@@ -1,0 +1,12 @@
+Copyright (c) Singleton SD. All rights reserved.
+
+This software is proprietary to Singleton SD. The package is published to the
+public npm registry so Singleton SD products and PoC consumers can install a
+versioned artifact. Publication does not grant an open-source license.
+
+You may install and use this package only as part of Singleton SD work or with
+express written permission from Singleton SD. You may not redistribute,
+sublicense, or sell this software, or use it to create a competing product,
+except as permitted in writing by Singleton SD.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
