@@ -39,6 +39,12 @@ export type RgbColour = {
   readonly b: number;
 };
 
+/**
+ * Clockwise rotation of the decoded source, applied before crop / sourceRect.
+ * Dimensions swap for 90° and 270°.
+ */
+export type SourceRotation = 0 | 90 | 180 | 270;
+
 export type NormaliseToProfileOptions = {
   readonly profile: DisplayProfile;
   /**
@@ -50,6 +56,11 @@ export type NormaliseToProfileOptions = {
   readonly sourceRect?: SourceRect;
   /** Fill for areas outside the source image. Defaults to white. */
   readonly background?: RgbColour;
+  /**
+   * Clockwise rotation of the decoded RGB before framing. Defaults to `0`.
+   * Useful when an upload is sideways relative to the panel.
+   */
+  readonly rotation?: SourceRotation;
 };
 
 /** Profile-sized RGB working buffer for later dither/pack steps. */

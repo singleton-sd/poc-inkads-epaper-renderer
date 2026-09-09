@@ -6,10 +6,65 @@ import type {
   ProfileRgbBuffer,
   RgbColour,
   SourceRect,
+  SourceRotation,
 } from './types.js';
 
 const DEFAULT_CROP: CropPosition = { x: 0.5, y: 0.5 };
 const DEFAULT_BACKGROUND: RgbColour = { r: 255, g: 255, b: 255 };
+const VALID_ROTATIONS: ReadonlySet<SourceRotation> = new Set([0, 90, 180, 270]);
+
+/**
+ * Clockwise rotate decoded RGB. 90° / 270° swap width and height.
+ * Returns the same object when rotation is 0 so callers can skip copies.
+ */
+export function rotateDecodedImage(source: DecodedImage, rotation: SourceRotation): DecodedImage {
+  if (rotation === 0) {
+    return source;
+  }
+
+  const { width, height, rgb } = source;
+  if (rotation === 180) {
+    const out = new Uint8Array(rgb.length);
+    const last = width * height - 1;
+    for (let i = 0; i < width * height; i += 1) {
+      const s = i * 3;
+      const d = (last - i) * 3;
+      out[d] = rgb[s]!;
+      out[d + 1] = rgb[s + 1]!;
+      out[d + 2] = rgb[s + 2]!;
+    }
+    return { width, height, rgb: out };
+  }
+
+  const newWidth = height;
+  const newHeight = width;
+  const out = new Uint8Array(newWidth * newHeight * 3);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const s = (y * width + x) * 3;
+      const dx = rotation === 90 ? height - 1 - y : y;
+      const dy = rotation === 90 ? x : width - 1 - x;
+      const d = (dy * newWidth + dx) * 3;
+      out[d] = rgb[s]!;
+      out[d + 1] = rgb[s + 1]!;
+      out[d + 2] = rgb[s + 2]!;
+    }
+  }
+  return { width: newWidth, height: newHeight, rgb: out };
+}
+
+function resolveRotation(rotation: SourceRotation | undefined): SourceRotation {
+  if (rotation === undefined) {
+    return 0;
+  }
+  if (!VALID_ROTATIONS.has(rotation)) {
+    throw new ImageIngestError(
+      'INVALID_ROTATION',
+      `rotation must be 0, 90, 180, or 270 (got ${String(rotation)})`,
+    );
+  }
+  return rotation;
+}
 
 function clampUnit(value: number, label: string): number {
   if (!Number.isFinite(value)) {
@@ -230,12 +285,15 @@ export function normaliseToProfile(
     throw new ImageIngestError('INVALID_IMAGE', 'decoded image has no pixels');
   }
 
+  // Rotate first so crop / sourceRect operate in the upright source frame.
+  const framed = rotateDecodedImage(source, resolveRotation(options.rotation));
+
   const targetW = profile.width;
   const targetH = profile.height;
   const background = validateBackground(options.background ?? DEFAULT_BACKGROUND);
   const rect =
     options.sourceRect === undefined
-      ? coverFitRect(source, options.crop ?? DEFAULT_CROP, targetW, targetH)
+      ? coverFitRect(framed, options.crop ?? DEFAULT_CROP, targetW, targetH)
       : correctAspect(validateSourceRect(options.sourceRect), targetW, targetH);
 
   const originX = rect.x;
@@ -264,11 +322,11 @@ export function normaliseToProfile(
       if (downscaling) {
         const x0 = originX + x * stepX;
         const y0 = originY + y * stepY;
-        sampleAreaAverage(source, background, x0, y0, x0 + stepX, y0 + stepY, rgb, outOffset);
+        sampleAreaAverage(framed, background, x0, y0, x0 + stepX, y0 + stepY, rgb, outOffset);
       } else {
         const sx = originX + (x + 0.5) * stepX - 0.5;
         const sy = originY + (y + 0.5) * stepY - 0.5;
-        sampleNearest(source, sx, sy, background, rgb, outOffset);
+        sampleNearest(framed, sx, sy, background, rgb, outOffset);
       }
     }
   }

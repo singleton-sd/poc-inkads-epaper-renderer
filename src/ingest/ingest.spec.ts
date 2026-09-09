@@ -371,6 +371,110 @@ describe('normaliseToProfile', () => {
   });
 });
 
+describe('normaliseToProfile rotation', () => {
+  /** 2×1: left red, right blue — easy to spot after a 90° turn. */
+  function twoByOne(): { width: number; height: number; rgb: Uint8Array } {
+    return {
+      width: 2,
+      height: 1,
+      rgb: Uint8Array.of(255, 0, 0, 0, 0, 255),
+    };
+  }
+
+  it('defaults to no rotation', () => {
+    const source = twoByOne();
+    const plain = normaliseToProfile(source, {
+      profile: waveshare75BwProfile,
+      sourceRect: { x: 0, y: 0, width: 2, height: 1 },
+    });
+    const explicit = normaliseToProfile(source, {
+      profile: waveshare75BwProfile,
+      sourceRect: { x: 0, y: 0, width: 2, height: 1 },
+      rotation: 0,
+    });
+    assert.deepEqual(plain.rgb, explicit.rgb);
+  });
+
+  it('swaps cover-fit aspect after 90° so a tall source fills landscape', () => {
+    // Without rotation a 100×400 portrait cover-fits by cropping height.
+    // After 90° CW it becomes 400×100 and cover-fits by cropping width.
+    const tall = verticalSplitRgb(100, 400);
+    const native = normaliseToProfile(tall, {
+      profile: waveshare75BwProfile,
+      crop: { x: 0.5, y: 0 },
+    });
+    const rotated = normaliseToProfile(tall, {
+      profile: waveshare75BwProfile,
+      crop: { x: 0.5, y: 0 },
+      rotation: 90,
+    });
+    assert.notDeepEqual(native.rgb, rotated.rgb);
+    assert.ok(native.sourceRect.height < 400);
+    assert.ok(rotated.sourceRect.width < 400);
+  });
+
+  it('places the top-left pixel at top-right after 90° CW', () => {
+    // Exact 800×480: red at (0,0). After CW 90 the source is 480×800 with the
+    // marker at (479, 0). Top-aligned cover-fit keeps that row; it lands at the
+    // panel's top-right under nearest-neighbour.
+    const width = 800;
+    const height = 480;
+    const rgb = new Uint8Array(width * height * 3).fill(255);
+    rgb[0] = 255;
+    rgb[1] = 0;
+    rgb[2] = 0;
+    const result = normaliseToProfile(
+      { width, height, rgb },
+      {
+        profile: waveshare75BwProfile,
+        rotation: 90,
+        crop: { x: 0.5, y: 0 },
+      },
+    );
+    const topRight = (0 * 800 + 799) * 3;
+    assert.deepEqual([...result.rgb.slice(topRight, topRight + 3)], [255, 0, 0]);
+    assert.deepEqual([...result.rgb.slice(0, 3)], [255, 255, 255]);
+  });
+
+  it('moves the top-left pixel to bottom-right after 180°', () => {
+    const width = 800;
+    const height = 480;
+    const rgb = new Uint8Array(width * height * 3).fill(255);
+    rgb[0] = 10;
+    rgb[1] = 20;
+    rgb[2] = 30;
+    const result = normaliseToProfile(
+      { width, height, rgb },
+      { profile: waveshare75BwProfile, rotation: 180 },
+    );
+    const bottomRight = (479 * 800 + 799) * 3;
+    assert.deepEqual([...result.rgb.slice(bottomRight, bottomRight + 3)], [10, 20, 30]);
+    assert.deepEqual([...result.rgb.slice(0, 3)], [255, 255, 255]);
+  });
+
+  it('is deterministic for the same rotation', () => {
+    const source = horizontalSplitRgb(64, 32);
+    const a = normaliseToProfile(source, { profile: waveshare75BwProfile, rotation: 270 });
+    const b = normaliseToProfile(source, { profile: waveshare75BwProfile, rotation: 270 });
+    assert.deepEqual(a.rgb, b.rgb);
+  });
+
+  it('rejects an invalid rotation angle', () => {
+    assert.throws(
+      () =>
+        normaliseToProfile(twoByOne(), {
+          profile: waveshare75BwProfile,
+          rotation: 45 as 0,
+        }),
+      (error: unknown) => {
+        assert.ok(error instanceof ImageIngestError);
+        assert.equal(error.code, 'INVALID_ROTATION');
+        return true;
+      },
+    );
+  });
+});
+
 describe('ingestImageToProfile', () => {
   it('decodes PNG and normalises in one step', () => {
     const result = ingestImageToProfile(solidPng(50, 80, [9, 9, 9]), {
