@@ -2,7 +2,8 @@ import type { DisplayProfile } from '../display-profile/types.js';
 import { RENDERER_VERSION } from '../version.js';
 import { crc32Hex } from './crc32.js';
 import { FramebufferPackError } from './errors.js';
-import { bytesPerRowFor } from './layout.js';
+import { layoutForOrientation } from './layout.js';
+import { orientPixels } from './orient.js';
 import type { PackMonoBitmapOptions, PackSource, PackedFramebuffer } from './types.js';
 
 function validate(source: PackSource, profile: DisplayProfile): void {
@@ -24,13 +25,6 @@ function validate(source: PackSource, profile: DisplayProfile): void {
       `pixel count ${source.pixels.length} does not match ${profile.width}×${profile.height}`,
     );
   }
-  if (profile.orientation !== 'native') {
-    // Rotations stay unimplemented until physical validation (issue #8).
-    throw new FramebufferPackError(
-      'UNSUPPORTED_ORIENTATION',
-      `orientation ${profile.orientation} is not implemented yet`,
-    );
-  }
 }
 
 /**
@@ -39,29 +33,34 @@ function validate(source: PackSource, profile: DisplayProfile): void {
  * Layout matches the firmware contract: row-major, 8 pixels per byte, MSB is
  * the leftmost pixel. With `polarity: 'normal'` a set bit means a dark pixel,
  * which is the inverse of `MonoBitmap.pixels` (where `1` is white).
+ *
+ * Non-native `profile.orientation` rotates the logical artwork before packing.
+ * Metadata still reports `profile.width` / `profile.height`; the orientation
+ * field tells firmware how the packed rows are laid out.
  */
 export function packMonoBitmap(
   source: PackSource,
   options: PackMonoBitmapOptions,
 ): PackedFramebuffer {
   const { profile } = options;
-  const bytesPerRow = bytesPerRowFor(profile);
   validate(source, profile);
+  const layout = layoutForOrientation(profile);
+  const oriented = orientPixels(source.pixels, source.width, source.height, profile.orientation);
 
   const bytes = new Uint8Array(profile.packedByteLength);
   const darkBitIsSet = profile.polarity === 'normal';
 
-  for (let y = 0; y < profile.height; y += 1) {
-    for (let xByte = 0; xByte < bytesPerRow; xByte += 1) {
+  for (let y = 0; y < layout.height; y += 1) {
+    for (let xByte = 0; xByte < layout.bytesPerRow; xByte += 1) {
       let byteValue = 0;
       for (let bit = 0; bit < 8; bit += 1) {
         const x = xByte * 8 + bit;
-        const isDark = source.pixels[y * profile.width + x] === 0;
+        const isDark = oriented.pixels[y * layout.width + x] === 0;
         if (isDark === darkBitIsSet) {
           byteValue |= 0x80 >> bit;
         }
       }
-      bytes[y * bytesPerRow + xByte] = byteValue;
+      bytes[y * layout.bytesPerRow + xByte] = byteValue;
     }
   }
 

@@ -10,8 +10,9 @@ export type DisplayProfileId = string & { readonly __brand: 'DisplayProfileId' }
 export type PixelPacking = '1bpp-row-major';
 
 /**
- * Screen rotation applied during packing relative to the uploaded artwork.
- * Placeholders until hardware validation (issue #8); default is native.
+ * Clockwise screen rotation applied during packing relative to the logical
+ * artwork (`profile.width × profile.height`). Firmware reads `orientation` to
+ * interpret row layout; for 90° / 270° the packed stride uses swapped edges.
  */
 export type DisplayOrientation = 'native' | 'rotate-90' | 'rotate-180' | 'rotate-270';
 

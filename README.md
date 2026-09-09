@@ -18,7 +18,8 @@ Proof of concept. The pipeline from upload to device-ready bytes is complete
 for the Waveshare 7.5″ B/W target: ingest → crop/resize/zoom → dither → pack,
 with golden fixtures pinning the output byte for byte. The public API below is
 settled; validation against physical hardware (#8) and colour panels (#9)
-remain open, and orientation is provisional until #8.
+remain open. Profile `orientation` packs rotated mounts; confirm against
+hardware in #8.
 
 Published to the public npm registry as
 [`@singleton-sd/inkads-epaper-renderer`](https://www.npmjs.com/package/@singleton-sd/inkads-epaper-renderer).
@@ -245,7 +246,12 @@ is the leftmost pixel, and with `polarity: 'normal'` a set bit is a dark pixel.
 `checksum` is CRC-32 (IEEE) over the packed bytes, so firmware can verify a
 download with the same cheap algorithm. Preview pixels are expanded from the
 packed bytes, not the upload, so what you see is what the panel renders.
-Rotated orientations are rejected until hardware validation (#8).
+When `profile.orientation` is not `native`, packing rotates the logical
+`width × height` artwork into the device row layout (90° / 270° swap the
+packed stride; byte length stays the same on 800×480). Preview returns the
+device layout size — 480×800 for a portrait mount — so marketing UI can show
+the panel chrome without a CSS transform. Metadata still records the logical
+profile dimensions plus `orientation` for firmware.
 
 ## Framing: crop, zoom, and letterbox
 
@@ -286,6 +292,14 @@ and warn when most of an upload is being discarded.
 
 `crop` and `sourceRect` are mutually exclusive, since a rectangle already
 carries its own position.
+
+Optional `rotation` (`0 | 90 | 180 | 270`, default `0`) turns the decoded
+source clockwise **before** crop / `sourceRect`, so a sideways upload can be
+framed upright. 90° and 270° swap the source width and height.
+
+```ts
+normaliseToProfile(decoded, { profile, rotation: 90, crop: { x: 0.5, y: 0.5 } });
+```
 
 ## Browser and Node
 
@@ -372,7 +386,7 @@ than matching on message text.
 Exported types mirror these: `DisplayProfile`, `DisplayProfileId`,
 `DisplayProfileInput`, `AspectRatio`, `DisplayOrientation`, `DisplayPolarity`,
 `PixelPacking`, `DecodedImage`, `ProfileRgbBuffer`, `NormaliseToProfileOptions`,
-`CropPosition`, `SourceRect`, `RgbColour`, `DecodeLimits`, `FromRgbaLimits`,
+`CropPosition`, `SourceRect`, `RgbColour`, `SourceRotation`, `DecodeLimits`, `FromRgbaLimits`,
 `RgbaImageData`, `MonoBitmap`, `MonoRenderMode`, `MonoSource`,
 `RenderMonoOptions`, `PackedFramebuffer`, `FramebufferMetadata`, `PackSource`,
 `PackMonoBitmapOptions`, `PackErrorCode`, and `PreviewImage`. The `/node` entry

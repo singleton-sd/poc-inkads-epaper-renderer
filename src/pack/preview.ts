@@ -1,6 +1,6 @@
 import type { DisplayProfile } from '../display-profile/types.js';
 import { FramebufferPackError } from './errors.js';
-import { bytesPerRowFor } from './layout.js';
+import { layoutForOrientation } from './layout.js';
 import type { PackedFramebuffer } from './types.js';
 
 /** RGBA pixels ready for `new ImageData(preview.data, preview.width, ...)`. */
@@ -28,12 +28,6 @@ function assertMatchesProfile(packed: PackedFramebuffer, profile: DisplayProfile
       `framebuffer metadata (${metadata.profileId}) does not match profile ${profile.id}`,
     );
   }
-  if (profile.orientation !== 'native') {
-    throw new FramebufferPackError(
-      'UNSUPPORTED_ORIENTATION',
-      `orientation ${profile.orientation} is not implemented yet`,
-    );
-  }
   if (packed.bytes.length !== profile.packedByteLength) {
     throw new FramebufferPackError(
       'PACKED_LENGTH_MISMATCH',
@@ -46,21 +40,23 @@ function assertMatchesProfile(packed: PackedFramebuffer, profile: DisplayProfile
  * Expand a packed framebuffer back to RGBA for on-screen preview.
  *
  * Derived from the packed bytes rather than the source artwork, so the preview
- * shows exactly what the panel will render.
+ * shows exactly what the panel will render. For `rotate-90` / `rotate-270` the
+ * image dimensions follow the device layout (swapped), so a portrait mount can
+ * be shown without a CSS transform.
  */
 export function toPreviewImage(packed: PackedFramebuffer, profile: DisplayProfile): PreviewImage {
-  const bytesPerRow = bytesPerRowFor(profile);
   assertMatchesProfile(packed, profile);
+  const layout = layoutForOrientation(profile);
 
-  const data = new Uint8ClampedArray(profile.width * profile.height * 4);
+  const data = new Uint8ClampedArray(layout.width * layout.height * 4);
   const darkBitIsSet = profile.polarity === 'normal';
 
-  for (let y = 0; y < profile.height; y += 1) {
-    for (let x = 0; x < profile.width; x += 1) {
-      const byte = packed.bytes[y * bytesPerRow + (x >> 3)]!;
+  for (let y = 0; y < layout.height; y += 1) {
+    for (let x = 0; x < layout.width; x += 1) {
+      const byte = packed.bytes[y * layout.bytesPerRow + (x >> 3)]!;
       const bitSet = (byte & (0x80 >> (x & 7))) !== 0;
       const shade = bitSet === darkBitIsSet ? 0 : 255;
-      const o = (y * profile.width + x) * 4;
+      const o = (y * layout.width + x) * 4;
       data[o] = shade;
       data[o + 1] = shade;
       data[o + 2] = shade;
@@ -68,5 +64,5 @@ export function toPreviewImage(packed: PackedFramebuffer, profile: DisplayProfil
     }
   }
 
-  return { width: profile.width, height: profile.height, data };
+  return { width: layout.width, height: layout.height, data };
 }
