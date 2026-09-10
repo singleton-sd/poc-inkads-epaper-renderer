@@ -48,12 +48,24 @@ export type SourceRotation = 0 | 90 | 180 | 270;
 export type NormaliseToProfileOptions = {
   readonly profile: DisplayProfile;
   /**
-   * Position of the cover-fit window. Ignored when `sourceRect` is given, and
-   * supplying both is an error.
+   * Position of the cover-fit window. Ignored when `sourceRect` or `zoom` is
+   * given, and combining those inputs is an error.
    */
   readonly crop?: CropPosition;
   /** Explicit region to render, enabling zoom and letterboxing. */
   readonly sourceRect?: SourceRect;
+  /**
+   * Cover-fit-relative zoom (`1` = fill the panel). The renderer builds the
+   * `sourceRect` and clamps pan; consumers only send zoom (+ optional centre)
+   * and `rotation`. Mutually exclusive with `crop` and `sourceRect`.
+   */
+  readonly zoom?: number;
+  /**
+   * Pan centre in source pixels **after** `rotation`. Defaults to the image
+   * mid-point when `zoom` is set. Ignored unless `zoom` is set.
+   */
+  readonly centerX?: number;
+  readonly centerY?: number;
   /** Fill for areas outside the source image. Defaults to white. */
   readonly background?: RgbColour;
   /**

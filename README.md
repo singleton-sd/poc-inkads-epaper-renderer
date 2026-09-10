@@ -261,35 +261,24 @@ distorted, but content is discarded — a tall portrait can lose most of its
 height. `crop` slides that fixed window; `sourceRect` sets the window itself,
 which is what zooming is.
 
-Framing UIs usually think in **centre + zoom** rather than raw rectangles.
-Helpers convert that model into a `sourceRect` (and clamp pans to the artwork):
+Framing UIs usually only send **zoom**, optional **pan centre**, and
+**rotation**. Pass those on `normaliseToProfile` and the renderer builds (and
+clamps) the `sourceRect`:
 
 ```ts
-import {
-  clampFraming,
-  defaultFraming,
-  normaliseToProfile,
-  rotatedImageSize,
-  sourceRectFromFraming,
-} from '@singleton-sd/inkads-epaper-renderer';
-
-const image = { width: decoded.width, height: decoded.height };
-// After optional source rotation, frame in the upright pixel space:
-const size = rotatedImageSize(image, 90);
-let framing = defaultFraming(size); // zoom 1 = cover-fit, centred
-framing = clampFraming(size, { ...framing, zoom: 2, centerX: framing.centerX + 40 }, profile);
-
 const framed = normaliseToProfile(decoded, {
   profile,
   rotation: 90,
-  sourceRect: sourceRectFromFraming(size, framing, profile),
+  zoom: 2, // 1 = cover-fit; >1 zooms in; <1 letterboxes
+  // centerX / centerY optional — default to image mid-point after rotation
 });
 ```
 
-Gesture / button chrome stays in the consumer; these helpers keep the math
-shared and deterministic.
+Helpers (`defaultFraming`, `sourceRectFromFraming`, `clampFraming`, …) remain
+available when a consumer needs the math without running the full pipeline.
+Gesture / button chrome stays in the consumer.
 
-Or pass `sourceRect` directly:
+Or pass `sourceRect` directly when you already have an explicit region:
 
 ```ts
 const framed = normaliseToProfile(decoded, {
