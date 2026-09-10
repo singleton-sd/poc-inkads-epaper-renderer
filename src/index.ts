@@ -51,6 +51,7 @@ export type {
   ProfileRgbBuffer,
   RgbColour,
   SourceRect,
+  SourceRotation,
 } from './ingest/types.js';
 
 export { MonoRenderError, renderMono, rgbToLuma } from './mono/index.js';

@@ -171,14 +171,51 @@ describe('packMonoBitmap', () => {
     );
   });
 
-  it('rejects unimplemented orientations', () => {
+  it('packs rotate-180 by remapping pixels and keeps metadata size', () => {
+    // Dark only at (0,0): after 180° it must set the last pixel's MSB packing.
+    const source = bitmapOf((x, y) => (x === 0 && y === 0 ? 0 : 1));
+    const rotated = defineDisplayProfile({ ...profile, orientation: 'rotate-180' });
+    const packed = packMonoBitmap(source, { profile: rotated });
+    assert.equal(packed.bytes.length, profile.packedByteLength);
+    assert.equal(packed.metadata.width, 800);
+    assert.equal(packed.metadata.height, 480);
+    assert.equal(packed.metadata.orientation, 'rotate-180');
+    // Last row, last byte: rightmost pixel is bit 0 of that byte for width 800.
+    const lastByte = packed.bytes[packed.bytes.length - 1]!;
+    assert.equal(lastByte, 0x01);
+    assert.equal(packed.bytes[0], 0x00);
+  });
+
+  it('packs rotate-90 with swapped row stride into the same byte length', () => {
+    const source = bitmapOf((x, y) => (x === 0 && y === 0 ? 0 : 1));
     const rotated = defineDisplayProfile({ ...profile, orientation: 'rotate-90' });
+    const packed = packMonoBitmap(source, { profile: rotated });
+    assert.equal(packed.bytes.length, 48_000);
+    assert.equal(packed.metadata.width, 800);
+    assert.equal(packed.metadata.height, 480);
+    assert.equal(packed.metadata.orientation, 'rotate-90');
+    // CW 90: (0,0) → (479, 0) in 480×800 layout → last bit of first row's last byte.
+    assert.equal(packed.bytes[59], 0x01);
+    assert.equal(packed.bytes[0], 0x00);
+  });
+
+  it('packs rotate-270 into the same byte length', () => {
+    const source = bitmapOf((x, y) => (x === 0 && y === 0 ? 0 : 1));
+    const rotated = defineDisplayProfile({ ...profile, orientation: 'rotate-270' });
+    const packed = packMonoBitmap(source, { profile: rotated });
+    assert.equal(packed.bytes.length, 48_000);
+    // CW 270: (0,0) → (0, 799) in 480×800 → first bit of the last row.
+    assert.equal(packed.bytes[799 * 60], 0x80);
+  });
+
+  it('rejects unknown orientations instead of packing a corrupt stride', () => {
+    const source = bitmapOf(() => 1);
+    const bogus = {
+      ...profile,
+      orientation: 'rotate-45' as typeof profile.orientation,
+    };
     assert.throws(
-      () =>
-        packMonoBitmap(
-          bitmapOf(() => 1),
-          { profile: rotated },
-        ),
+      () => packMonoBitmap(source, { profile: bogus }),
       (error: unknown) => {
         assert.ok(error instanceof FramebufferPackError);
         assert.equal(error.code, 'UNSUPPORTED_ORIENTATION');
@@ -251,24 +288,29 @@ describe('toPreviewImage', () => {
     );
   });
 
-  it('rejects a rotated profile rather than previewing it as native', () => {
+  it('previews rotate-90 in device (portrait) dimensions', () => {
+    const source = bitmapOf((x, y) => (x === 0 && y === 0 ? 0 : 1));
     const rotated = defineDisplayProfile({ ...profile, orientation: 'rotate-90' });
-    const packed = packMonoBitmap(
-      bitmapOf(() => 1),
-      { profile },
-    );
-    const rotatedMetadata = {
-      bytes: packed.bytes,
-      metadata: { ...packed.metadata, orientation: rotated.orientation },
-    };
-    assert.throws(
-      () => toPreviewImage(rotatedMetadata, rotated),
-      (error: unknown) => {
-        assert.ok(error instanceof FramebufferPackError);
-        assert.equal(error.code, 'UNSUPPORTED_ORIENTATION');
-        return true;
-      },
-    );
+    const packed = packMonoBitmap(source, { profile: rotated });
+    const preview = toPreviewImage(packed, rotated);
+    assert.equal(preview.width, 480);
+    assert.equal(preview.height, 800);
+    assert.equal(preview.data.length, 480 * 800 * 4);
+    // Dark marker at device (479, 0).
+    const o = (0 * 480 + 479) * 4;
+    assert.deepEqual([...preview.data.slice(o, o + 4)], [0, 0, 0, 255]);
+    assert.deepEqual([...preview.data.slice(0, 4)], [255, 255, 255, 255]);
+  });
+
+  it('round-trips rotate-180 through preview shades', () => {
+    const source = bitmapOf((x, y) => (x === 0 && y === 0 ? 0 : 1));
+    const rotated = defineDisplayProfile({ ...profile, orientation: 'rotate-180' });
+    const packed = packMonoBitmap(source, { profile: rotated });
+    const preview = toPreviewImage(packed, rotated);
+    assert.equal(preview.width, 800);
+    assert.equal(preview.height, 480);
+    const o = (479 * 800 + 799) * 4;
+    assert.deepEqual([...preview.data.slice(o, o + 4)], [0, 0, 0, 255]);
   });
 
   it('encodes a PNG that decodes back to the same shades', () => {

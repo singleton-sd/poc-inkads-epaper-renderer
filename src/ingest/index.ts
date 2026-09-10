@@ -14,4 +14,5 @@ export type {
   ProfileRgbBuffer,
   RgbColour,
   SourceRect,
+  SourceRotation,
 } from './types.js';
