@@ -1,6 +1,15 @@
 export { decodeImage } from './decode.js';
 export type { DecodeImageOptions } from './decode.js';
 export { ImageIngestError } from './errors.js';
+export {
+  clampFraming,
+  coverWindowSize,
+  defaultFraming,
+  nextSourceRotation,
+  rotatedImageSize,
+  sourceRectFromFraming,
+} from './framing.js';
+export type { FramingProfileSize, FramingState, ImageSize } from './framing.js';
 export { DEFAULT_DECODE_LIMITS } from './limits.js';
 export type { DecodeLimits } from './limits.js';
 export { ingestImageToProfile } from './ingest.js';

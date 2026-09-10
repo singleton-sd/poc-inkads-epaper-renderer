@@ -1,4 +1,5 @@
 import { ImageIngestError } from './errors.js';
+import { clampFraming, sourceRectFromFraming } from './framing.js';
 import type {
   CropPosition,
   DecodedImage,
@@ -256,14 +257,47 @@ function sampleAreaAverage(
   out[outOffset + 2] = Math.round(b / totalWeight);
 }
 
+function resolveSourceRect(
+  framed: DecodedImage,
+  options: NormaliseToProfileOptions,
+  targetW: number,
+  targetH: number,
+): SourceRect {
+  if (options.sourceRect !== undefined) {
+    return correctAspect(validateSourceRect(options.sourceRect), targetW, targetH);
+  }
+  if (options.zoom !== undefined) {
+    if (!Number.isFinite(options.zoom) || options.zoom <= 0) {
+      throw new ImageIngestError('INVALID_CROP', 'zoom must be a positive finite number');
+    }
+    const size = { width: framed.width, height: framed.height };
+    const framing = clampFraming(
+      size,
+      {
+        zoom: options.zoom,
+        centerX: options.centerX ?? size.width / 2,
+        centerY: options.centerY ?? size.height / 2,
+      },
+      options.profile,
+    );
+    return correctAspect(
+      validateSourceRect(sourceRectFromFraming(size, framing, options.profile)),
+      targetW,
+      targetH,
+    );
+  }
+  return coverFitRect(framed, options.crop ?? DEFAULT_CROP, targetW, targetH);
+}
+
 /**
  * Render a region of the source at the display profile dimensions.
  *
  * By default this cover-fits: the largest centred region matching the panel
  * aspect ratio, which fills the panel but discards whatever falls outside.
- * Pass `sourceRect` to choose the region explicitly, which is what a framing UI
- * does when the user zooms or pans; it may extend past the image to zoom out,
- * and the surrounding area is filled with `background`.
+ * Pass `zoom` (and optional `centerX` / `centerY`) for consumer UIs that only
+ * send zoom/pan/rotation — the renderer builds and clamps the `sourceRect`.
+ * Pass `sourceRect` when you already have an explicit region. It may extend
+ * past the image to zoom out; the surrounding area is filled with `background`.
  *
  * Downscaling averages the covered source area; upscaling repeats the nearest
  * pixel. Both are deterministic: identical input and options yield identical
@@ -275,26 +309,37 @@ export function normaliseToProfile(
 ): ProfileRgbBuffer {
   const { profile } = options;
 
-  if (options.crop !== undefined && options.sourceRect !== undefined) {
+  const framingInputs = [
+    options.crop !== undefined,
+    options.sourceRect !== undefined,
+    options.zoom !== undefined,
+  ].filter(Boolean).length;
+  if (framingInputs > 1) {
     throw new ImageIngestError(
       'INVALID_CROP',
-      'pass either crop or sourceRect, not both: sourceRect already sets the position',
+      'pass only one of crop, sourceRect, or zoom (zoom builds the sourceRect)',
+    );
+  }
+  if (
+    options.zoom === undefined &&
+    (options.centerX !== undefined || options.centerY !== undefined)
+  ) {
+    throw new ImageIngestError(
+      'INVALID_CROP',
+      'centerX / centerY require zoom; they are ignored with crop or sourceRect',
     );
   }
   if (source.width < 1 || source.height < 1) {
     throw new ImageIngestError('INVALID_IMAGE', 'decoded image has no pixels');
   }
 
-  // Rotate first so crop / sourceRect operate in the upright source frame.
+  // Rotate first so crop / sourceRect / zoom operate in the upright source frame.
   const framed = rotateDecodedImage(source, resolveRotation(options.rotation));
 
   const targetW = profile.width;
   const targetH = profile.height;
   const background = validateBackground(options.background ?? DEFAULT_BACKGROUND);
-  const rect =
-    options.sourceRect === undefined
-      ? coverFitRect(framed, options.crop ?? DEFAULT_CROP, targetW, targetH)
-      : correctAspect(validateSourceRect(options.sourceRect), targetW, targetH);
+  const rect = resolveSourceRect(framed, options, targetW, targetH);
 
   const originX = rect.x;
   const originY = rect.y;

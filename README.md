@@ -261,6 +261,25 @@ distorted, but content is discarded — a tall portrait can lose most of its
 height. `crop` slides that fixed window; `sourceRect` sets the window itself,
 which is what zooming is.
 
+Framing UIs usually only send **zoom**, optional **pan centre**, and
+**rotation**. Pass those on `normaliseToProfile` and the renderer builds (and
+clamps) the `sourceRect`:
+
+```ts
+const framed = normaliseToProfile(decoded, {
+  profile,
+  rotation: 90,
+  zoom: 2, // 1 = cover-fit; >1 zooms in; <1 letterboxes
+  // centerX / centerY optional — default to image mid-point after rotation
+});
+```
+
+Helpers (`defaultFraming`, `sourceRectFromFraming`, `clampFraming`, …) remain
+available when a consumer needs the math without running the full pipeline.
+Gesture / button chrome stays in the consumer.
+
+Or pass `sourceRect` directly when you already have an explicit region:
+
 ```ts
 const framed = normaliseToProfile(decoded, {
   profile,
@@ -347,17 +366,19 @@ internal helper cannot leak out unnoticed.
 
 ### Pipeline
 
-| Export                 | Entry   | Purpose                                                        |
-| ---------------------- | ------- | -------------------------------------------------------------- |
-| `decodeImage`          | `/node` | PNG/JPEG bytes → RGB, with limits applied to untrusted uploads |
-| `fromRgbaImageData`    | root    | Canvas RGBA → RGB, the browser's way in                        |
-| `normaliseToProfile`   | root    | Crop, zoom, and resize to the profile                          |
-| `ingestImageToProfile` | `/node` | `decodeImage` + `normaliseToProfile` in one call               |
-| `renderMono`           | root    | RGB → 1-bit bitmap via threshold or dithering                  |
-| `packMonoBitmap`       | root    | Bitmap → device-ready framebuffer plus metadata                |
-| `toPreviewImage`       | root    | Framebuffer → RGBA for a canvas                                |
-| `encodePreviewPng`     | `/node` | Preview → PNG file bytes                                       |
-| `crc32Hex`             | root    | The checksum firmware verifies against                         |
+| Export                                                                          | Entry   | Purpose                                                        |
+| ------------------------------------------------------------------------------- | ------- | -------------------------------------------------------------- |
+| `decodeImage`                                                                   | `/node` | PNG/JPEG bytes → RGB, with limits applied to untrusted uploads |
+| `fromRgbaImageData`                                                             | root    | Canvas RGBA → RGB, the browser's way in                        |
+| `normaliseToProfile`                                                            | root    | Crop, zoom, and resize to the profile                          |
+| `coverWindowSize` / `defaultFraming` / `sourceRectFromFraming` / `clampFraming` | root    | Centre/zoom framing helpers → `sourceRect`                     |
+| `rotatedImageSize` / `nextSourceRotation`                                       | root    | Source rotation size + 90° step helper                         |
+| `ingestImageToProfile`                                                          | `/node` | `decodeImage` + `normaliseToProfile` in one call               |
+| `renderMono`                                                                    | root    | RGB → 1-bit bitmap via threshold or dithering                  |
+| `packMonoBitmap`                                                                | root    | Bitmap → device-ready framebuffer plus metadata                |
+| `toPreviewImage`                                                                | root    | Framebuffer → RGBA for a canvas                                |
+| `encodePreviewPng`                                                              | `/node` | Preview → PNG file bytes                                       |
+| `crc32Hex`                                                                      | root    | The checksum firmware verifies against                         |
 
 ### Profiles
 
@@ -386,7 +407,8 @@ than matching on message text.
 Exported types mirror these: `DisplayProfile`, `DisplayProfileId`,
 `DisplayProfileInput`, `AspectRatio`, `DisplayOrientation`, `DisplayPolarity`,
 `PixelPacking`, `DecodedImage`, `ProfileRgbBuffer`, `NormaliseToProfileOptions`,
-`CropPosition`, `SourceRect`, `RgbColour`, `SourceRotation`, `DecodeLimits`, `FromRgbaLimits`,
+`CropPosition`, `SourceRect`, `RgbColour`, `SourceRotation`, `ImageSize`,
+`FramingState`, `FramingProfileSize`, `DecodeLimits`, `FromRgbaLimits`,
 `RgbaImageData`, `MonoBitmap`, `MonoRenderMode`, `MonoSource`,
 `RenderMonoOptions`, `PackedFramebuffer`, `FramebufferMetadata`, `PackSource`,
 `PackMonoBitmapOptions`, `PackErrorCode`, and `PreviewImage`. The `/node` entry

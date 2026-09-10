@@ -579,6 +579,29 @@ describe('normaliseToProfile sourceRect', () => {
     );
   });
 
+  it('rejects mixing zoom with crop or sourceRect', () => {
+    assert.throws(
+      () =>
+        normaliseToProfile(greySource(100, 100), {
+          profile,
+          zoom: 2,
+          sourceRect: { x: 0, y: 0, width: 50, height: 30 },
+        }),
+      (error: unknown) => error instanceof ImageIngestError && error.code === 'INVALID_CROP',
+    );
+  });
+
+  it('rejects centre without zoom', () => {
+    assert.throws(
+      () =>
+        normaliseToProfile(greySource(100, 100), {
+          profile,
+          centerX: 10,
+        }),
+      (error: unknown) => error instanceof ImageIngestError && error.code === 'INVALID_CROP',
+    );
+  });
+
   it('rejects a degenerate or non-finite rectangle', () => {
     for (const rect of [
       { x: 0, y: 0, width: 0, height: 10 },
@@ -638,6 +661,47 @@ describe('normaliseToProfile sourceRect', () => {
         normaliseToProfile(greySource(100, 100), { profile, background: { r: 256, g: 0, b: 0 } }),
       (error: unknown) => error instanceof ImageIngestError && error.code === 'INVALID_CROP',
     );
+  });
+});
+
+describe('normaliseToProfile zoom', () => {
+  const profile = waveshare75BwProfile;
+
+  function greySource(width: number, height: number) {
+    const rgb = new Uint8Array(width * height * 3).fill(128);
+    return { width, height, rgb };
+  }
+
+  it('zoom 1 matches default cover-fit', () => {
+    const source = greySource(1600, 1600);
+    const viaZoom = normaliseToProfile(source, { profile, zoom: 1 });
+    const viaDefault = normaliseToProfile(source, { profile });
+    assert.deepEqual(viaZoom.sourceRect, viaDefault.sourceRect);
+    assert.deepEqual(viaZoom.rgb, viaDefault.rgb);
+  });
+
+  it('zoom and rotation are enough for a consumer framing UI', () => {
+    // Portrait source; rotate upright then zoom in — no sourceRect from caller.
+    const source = greySource(480, 800);
+    const result = normaliseToProfile(source, { profile, rotation: 90, zoom: 2 });
+    assert.ok(result.sourceRect.width < 800);
+    assert.ok(result.sourceRect.height < 480);
+    assert.equal(result.width, 800);
+    assert.equal(result.height, 480);
+  });
+
+  it('clamps an out-of-bounds pan centre', () => {
+    const source = greySource(1600, 960);
+    const result = normaliseToProfile(source, {
+      profile,
+      zoom: 2,
+      centerX: -500,
+      centerY: 5000,
+    });
+    assert.ok(result.sourceRect.x >= 0);
+    assert.ok(result.sourceRect.y >= 0);
+    assert.ok(result.sourceRect.x + result.sourceRect.width <= 1600 + 1e-6);
+    assert.ok(result.sourceRect.y + result.sourceRect.height <= 960 + 1e-6);
   });
 });
 
