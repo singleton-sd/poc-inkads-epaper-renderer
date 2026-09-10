@@ -38,6 +38,15 @@ export type {
 } from './display-profile/index.js';
 
 export { ImageIngestError } from './ingest/errors.js';
+export {
+  clampFraming,
+  coverWindowSize,
+  defaultFraming,
+  nextSourceRotation,
+  rotatedImageSize,
+  sourceRectFromFraming,
+} from './ingest/framing.js';
+export type { FramingProfileSize, FramingState, ImageSize } from './ingest/framing.js';
 export { DEFAULT_DECODE_LIMITS } from './ingest/limits.js';
 export type { DecodeLimits } from './ingest/limits.js';
 export { normaliseToProfile } from './ingest/normalise.js';

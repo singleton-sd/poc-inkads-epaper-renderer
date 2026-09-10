@@ -261,6 +261,36 @@ distorted, but content is discarded — a tall portrait can lose most of its
 height. `crop` slides that fixed window; `sourceRect` sets the window itself,
 which is what zooming is.
 
+Framing UIs usually think in **centre + zoom** rather than raw rectangles.
+Helpers convert that model into a `sourceRect` (and clamp pans to the artwork):
+
+```ts
+import {
+  clampFraming,
+  defaultFraming,
+  normaliseToProfile,
+  rotatedImageSize,
+  sourceRectFromFraming,
+} from '@singleton-sd/inkads-epaper-renderer';
+
+const image = { width: decoded.width, height: decoded.height };
+// After optional source rotation, frame in the upright pixel space:
+const size = rotatedImageSize(image, 90);
+let framing = defaultFraming(size); // zoom 1 = cover-fit, centred
+framing = clampFraming(size, { ...framing, zoom: 2, centerX: framing.centerX + 40 }, profile);
+
+const framed = normaliseToProfile(decoded, {
+  profile,
+  rotation: 90,
+  sourceRect: sourceRectFromFraming(size, framing, profile),
+});
+```
+
+Gesture / button chrome stays in the consumer; these helpers keep the math
+shared and deterministic.
+
+Or pass `sourceRect` directly:
+
 ```ts
 const framed = normaliseToProfile(decoded, {
   profile,
@@ -347,17 +377,19 @@ internal helper cannot leak out unnoticed.
 
 ### Pipeline
 
-| Export                 | Entry   | Purpose                                                        |
-| ---------------------- | ------- | -------------------------------------------------------------- |
-| `decodeImage`          | `/node` | PNG/JPEG bytes → RGB, with limits applied to untrusted uploads |
-| `fromRgbaImageData`    | root    | Canvas RGBA → RGB, the browser's way in                        |
-| `normaliseToProfile`   | root    | Crop, zoom, and resize to the profile                          |
-| `ingestImageToProfile` | `/node` | `decodeImage` + `normaliseToProfile` in one call               |
-| `renderMono`           | root    | RGB → 1-bit bitmap via threshold or dithering                  |
-| `packMonoBitmap`       | root    | Bitmap → device-ready framebuffer plus metadata                |
-| `toPreviewImage`       | root    | Framebuffer → RGBA for a canvas                                |
-| `encodePreviewPng`     | `/node` | Preview → PNG file bytes                                       |
-| `crc32Hex`             | root    | The checksum firmware verifies against                         |
+| Export                                                      | Entry   | Purpose                                                        |
+| ----------------------------------------------------------- | ------- | -------------------------------------------------------------- |
+| `decodeImage`                                               | `/node` | PNG/JPEG bytes → RGB, with limits applied to untrusted uploads |
+| `fromRgbaImageData`                                         | root    | Canvas RGBA → RGB, the browser's way in                        |
+| `normaliseToProfile`                                        | root    | Crop, zoom, and resize to the profile                          |
+| `defaultFraming` / `sourceRectFromFraming` / `clampFraming` | root    | Centre/zoom framing helpers → `sourceRect`                     |
+| `rotatedImageSize` / `nextSourceRotation`                   | root    | Source rotation size + 90° step helper                         |
+| `ingestImageToProfile`                                      | `/node` | `decodeImage` + `normaliseToProfile` in one call               |
+| `renderMono`                                                | root    | RGB → 1-bit bitmap via threshold or dithering                  |
+| `packMonoBitmap`                                            | root    | Bitmap → device-ready framebuffer plus metadata                |
+| `toPreviewImage`                                            | root    | Framebuffer → RGBA for a canvas                                |
+| `encodePreviewPng`                                          | `/node` | Preview → PNG file bytes                                       |
+| `crc32Hex`                                                  | root    | The checksum firmware verifies against                         |
 
 ### Profiles
 
