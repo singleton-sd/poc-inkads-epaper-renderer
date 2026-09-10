@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.4.1](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.4.0...1.4.1) (2026-09-10)
+
+### Bug Fixes
+
+* [#42](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/42) Allow letterbox pan and expose pan room ([7844613](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/7844613ee0769c7c02fd79bafb4dec8368e58a38))
+
 ## [1.4.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.3.0...1.4.0) (2026-09-10)
 
 ### Features
