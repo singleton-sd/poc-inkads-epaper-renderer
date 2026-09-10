@@ -27,6 +27,7 @@ const ROOT_EXPORTS = [
   'crc32Hex',
   'defaultFraming',
   'defineDisplayProfile',
+  'framingPanRoom',
   'fromRgbaImageData',
   'getDisplayProfile',
   'hasDisplayProfile',

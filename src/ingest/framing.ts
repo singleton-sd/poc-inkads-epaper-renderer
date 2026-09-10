@@ -24,6 +24,17 @@ export type FramingState = {
 /** Profile fields needed to size the cover-fit window. */
 export type FramingProfileSize = Pick<DisplayProfile, 'width' | 'height'>;
 
+/**
+ * How far the framing centre can still move on each axis (source pixels).
+ * `0` means that arrow should be disabled.
+ */
+export type FramingPanRoom = {
+  readonly west: number;
+  readonly east: number;
+  readonly north: number;
+  readonly south: number;
+};
+
 const MIN_ZOOM = 0.05;
 
 const NEXT_ROTATION: Record<SourceRotation, SourceRotation> = {
@@ -89,31 +100,54 @@ export function sourceRectFromFraming(
 }
 
 /**
- * Keep the framing window inside the artwork when possible. If the window is
- * larger than the image (zoomed out), pin the centre to the image mid-point.
+ * Inclusive centre range that keeps the image and window overlapping usefully:
+ * when cropped (window smaller than image), the window stays inside the image;
+ * when letterboxed (window larger), the full image stays inside the window.
+ */
+function centreBounds(imageExtent: number, windowExtent: number): { min: number; max: number } {
+  const half = windowExtent / 2;
+  const a = half;
+  const b = imageExtent - half;
+  return { min: Math.min(a, b), max: Math.max(a, b) };
+}
+
+/**
+ * Keep framing so the panel never shows empty without the artwork when
+ * letterboxed, and never samples outside the artwork when cropped.
  */
 export function clampFraming(
   image: ImageSize,
   framing: FramingState,
   profile: FramingProfileSize,
 ): FramingState {
-  const rect = sourceRectFromFraming(image, framing, profile);
-  let centerX = framing.centerX;
-  let centerY = framing.centerY;
+  const zoom = Math.max(framing.zoom, MIN_ZOOM);
+  const rect = sourceRectFromFraming(image, { ...framing, zoom }, profile);
+  const x = centreBounds(image.width, rect.width);
+  const y = centreBounds(image.height, rect.height);
+  return {
+    zoom,
+    centerX: Math.min(Math.max(framing.centerX, x.min), x.max),
+    centerY: Math.min(Math.max(framing.centerY, y.min), y.max),
+  };
+}
 
-  if (rect.width >= image.width) {
-    centerX = image.width / 2;
-  } else {
-    const half = rect.width / 2;
-    centerX = Math.min(Math.max(centerX, half), image.width - half);
-  }
-
-  if (rect.height >= image.height) {
-    centerY = image.height / 2;
-  } else {
-    const half = rect.height / 2;
-    centerY = Math.min(Math.max(centerY, half), image.height - half);
-  }
-
-  return { zoom: Math.max(framing.zoom, MIN_ZOOM), centerX, centerY };
+/**
+ * Remaining pan travel on each axis after clamping. Consumers use this to
+ * disable arrow controls at the edge.
+ */
+export function framingPanRoom(
+  image: ImageSize,
+  framing: FramingState,
+  profile: FramingProfileSize,
+): FramingPanRoom {
+  const clamped = clampFraming(image, framing, profile);
+  const rect = sourceRectFromFraming(image, clamped, profile);
+  const x = centreBounds(image.width, rect.width);
+  const y = centreBounds(image.height, rect.height);
+  return {
+    west: clamped.centerX - x.min,
+    east: x.max - clamped.centerX,
+    north: clamped.centerY - y.min,
+    south: y.max - clamped.centerY,
+  };
 }
