@@ -115,5 +115,5 @@ export function clampFraming(
     centerY = Math.min(Math.max(centerY, half), image.height - half);
   }
 
-  return { zoom: framing.zoom, centerX, centerY };
+  return { zoom: Math.max(framing.zoom, MIN_ZOOM), centerX, centerY };
 }

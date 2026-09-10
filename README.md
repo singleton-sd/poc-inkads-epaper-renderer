@@ -366,19 +366,19 @@ internal helper cannot leak out unnoticed.
 
 ### Pipeline
 
-| Export                                                      | Entry   | Purpose                                                        |
-| ----------------------------------------------------------- | ------- | -------------------------------------------------------------- |
-| `decodeImage`                                               | `/node` | PNG/JPEG bytes → RGB, with limits applied to untrusted uploads |
-| `fromRgbaImageData`                                         | root    | Canvas RGBA → RGB, the browser's way in                        |
-| `normaliseToProfile`                                        | root    | Crop, zoom, and resize to the profile                          |
-| `defaultFraming` / `sourceRectFromFraming` / `clampFraming` | root    | Centre/zoom framing helpers → `sourceRect`                     |
-| `rotatedImageSize` / `nextSourceRotation`                   | root    | Source rotation size + 90° step helper                         |
-| `ingestImageToProfile`                                      | `/node` | `decodeImage` + `normaliseToProfile` in one call               |
-| `renderMono`                                                | root    | RGB → 1-bit bitmap via threshold or dithering                  |
-| `packMonoBitmap`                                            | root    | Bitmap → device-ready framebuffer plus metadata                |
-| `toPreviewImage`                                            | root    | Framebuffer → RGBA for a canvas                                |
-| `encodePreviewPng`                                          | `/node` | Preview → PNG file bytes                                       |
-| `crc32Hex`                                                  | root    | The checksum firmware verifies against                         |
+| Export                                                                          | Entry   | Purpose                                                        |
+| ------------------------------------------------------------------------------- | ------- | -------------------------------------------------------------- |
+| `decodeImage`                                                                   | `/node` | PNG/JPEG bytes → RGB, with limits applied to untrusted uploads |
+| `fromRgbaImageData`                                                             | root    | Canvas RGBA → RGB, the browser's way in                        |
+| `normaliseToProfile`                                                            | root    | Crop, zoom, and resize to the profile                          |
+| `coverWindowSize` / `defaultFraming` / `sourceRectFromFraming` / `clampFraming` | root    | Centre/zoom framing helpers → `sourceRect`                     |
+| `rotatedImageSize` / `nextSourceRotation`                                       | root    | Source rotation size + 90° step helper                         |
+| `ingestImageToProfile`                                                          | `/node` | `decodeImage` + `normaliseToProfile` in one call               |
+| `renderMono`                                                                    | root    | RGB → 1-bit bitmap via threshold or dithering                  |
+| `packMonoBitmap`                                                                | root    | Bitmap → device-ready framebuffer plus metadata                |
+| `toPreviewImage`                                                                | root    | Framebuffer → RGBA for a canvas                                |
+| `encodePreviewPng`                                                              | `/node` | Preview → PNG file bytes                                       |
+| `crc32Hex`                                                                      | root    | The checksum firmware verifies against                         |
 
 ### Profiles
 
@@ -407,7 +407,8 @@ than matching on message text.
 Exported types mirror these: `DisplayProfile`, `DisplayProfileId`,
 `DisplayProfileInput`, `AspectRatio`, `DisplayOrientation`, `DisplayPolarity`,
 `PixelPacking`, `DecodedImage`, `ProfileRgbBuffer`, `NormaliseToProfileOptions`,
-`CropPosition`, `SourceRect`, `RgbColour`, `SourceRotation`, `DecodeLimits`, `FromRgbaLimits`,
+`CropPosition`, `SourceRect`, `RgbColour`, `SourceRotation`, `ImageSize`,
+`FramingState`, `FramingProfileSize`, `DecodeLimits`, `FromRgbaLimits`,
 `RgbaImageData`, `MonoBitmap`, `MonoRenderMode`, `MonoSource`,
 `RenderMonoOptions`, `PackedFramebuffer`, `FramebufferMetadata`, `PackSource`,
 `PackMonoBitmapOptions`, `PackErrorCode`, and `PreviewImage`. The `/node` entry

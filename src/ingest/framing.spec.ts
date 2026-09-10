@@ -10,9 +10,11 @@ import {
   rotatedImageSize,
   sourceRectFromFraming,
 } from './framing.js';
+import { normaliseToProfile } from './normalise.js';
 
 const profile = waveshare75BwProfile;
 const image = { width: 1600, height: 960 };
+const MIN_ZOOM = 0.05;
 
 describe('rotatedImageSize', () => {
   it('swaps dimensions for 90 and 270', () => {
@@ -70,5 +72,43 @@ describe('clampFraming', () => {
     const framing = clampFraming(image, { centerX: 0, centerY: 0, zoom: 0.25 }, profile);
     assert.equal(framing.centerX, image.width / 2);
     assert.equal(framing.centerY, image.height / 2);
+  });
+
+  it('returns the floor zoom used for geometry', () => {
+    const framing = clampFraming(image, { ...defaultFraming(image), zoom: 0.01 }, profile);
+    assert.equal(framing.zoom, MIN_ZOOM);
+    const rect = sourceRectFromFraming(image, framing, profile);
+    const atFloor = sourceRectFromFraming(
+      image,
+      { ...defaultFraming(image), zoom: MIN_ZOOM },
+      profile,
+    );
+    assert.deepEqual(rect, atFloor);
+  });
+});
+
+describe('rotated framing through normaliseToProfile', () => {
+  it('applies helper sourceRect in post-rotation coordinates', () => {
+    const rgb = new Uint8Array(480 * 800 * 3).fill(128);
+    const source = { width: 480, height: 800, rgb };
+    const size = rotatedImageSize({ width: 480, height: 800 }, 90);
+    const framing = clampFraming(size, { ...defaultFraming(size), zoom: 2 }, profile);
+    const rect = sourceRectFromFraming(size, framing, profile);
+
+    const viaHelpers = normaliseToProfile(source, {
+      profile,
+      rotation: 90,
+      sourceRect: rect,
+    });
+    const viaZoom = normaliseToProfile(source, {
+      profile,
+      rotation: 90,
+      zoom: framing.zoom,
+      centerX: framing.centerX,
+      centerY: framing.centerY,
+    });
+
+    assert.deepEqual(viaHelpers.sourceRect, viaZoom.sourceRect);
+    assert.deepEqual(viaHelpers.rgb, viaZoom.rgb);
   });
 });
