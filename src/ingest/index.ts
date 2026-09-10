@@ -5,11 +5,12 @@ export {
   clampFraming,
   coverWindowSize,
   defaultFraming,
+  framingPanRoom,
   nextSourceRotation,
   rotatedImageSize,
   sourceRectFromFraming,
 } from './framing.js';
-export type { FramingProfileSize, FramingState, ImageSize } from './framing.js';
+export type { FramingPanRoom, FramingProfileSize, FramingState, ImageSize } from './framing.js';
 export { DEFAULT_DECODE_LIMITS } from './limits.js';
 export type { DecodeLimits } from './limits.js';
 export { ingestImageToProfile } from './ingest.js';

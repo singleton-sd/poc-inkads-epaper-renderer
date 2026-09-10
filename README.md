@@ -274,9 +274,12 @@ const framed = normaliseToProfile(decoded, {
 });
 ```
 
-Helpers (`defaultFraming`, `sourceRectFromFraming`, `clampFraming`, …) remain
-available when a consumer needs the math without running the full pipeline.
-Gesture / button chrome stays in the consumer.
+Helpers (`defaultFraming`, `sourceRectFromFraming`, `clampFraming`,
+`framingPanRoom`, …) remain available when a consumer needs the math without
+running the full pipeline. Gesture / button chrome stays in the consumer.
+`clampFraming` keeps a cropped window inside the artwork, and when zoomed out
+(letterboxed) lets the image sit anywhere as long as it stays fully inside the
+panel — use `framingPanRoom` to disable pan arrows at the edge.
 
 Or pass `sourceRect` directly when you already have an explicit region:
 
@@ -366,19 +369,19 @@ internal helper cannot leak out unnoticed.
 
 ### Pipeline
 
-| Export                                                                          | Entry   | Purpose                                                        |
-| ------------------------------------------------------------------------------- | ------- | -------------------------------------------------------------- |
-| `decodeImage`                                                                   | `/node` | PNG/JPEG bytes → RGB, with limits applied to untrusted uploads |
-| `fromRgbaImageData`                                                             | root    | Canvas RGBA → RGB, the browser's way in                        |
-| `normaliseToProfile`                                                            | root    | Crop, zoom, and resize to the profile                          |
-| `coverWindowSize` / `defaultFraming` / `sourceRectFromFraming` / `clampFraming` | root    | Centre/zoom framing helpers → `sourceRect`                     |
-| `rotatedImageSize` / `nextSourceRotation`                                       | root    | Source rotation size + 90° step helper                         |
-| `ingestImageToProfile`                                                          | `/node` | `decodeImage` + `normaliseToProfile` in one call               |
-| `renderMono`                                                                    | root    | RGB → 1-bit bitmap via threshold or dithering                  |
-| `packMonoBitmap`                                                                | root    | Bitmap → device-ready framebuffer plus metadata                |
-| `toPreviewImage`                                                                | root    | Framebuffer → RGBA for a canvas                                |
-| `encodePreviewPng`                                                              | `/node` | Preview → PNG file bytes                                       |
-| `crc32Hex`                                                                      | root    | The checksum firmware verifies against                         |
+| Export                                                                                             | Entry   | Purpose                                                        |
+| -------------------------------------------------------------------------------------------------- | ------- | -------------------------------------------------------------- |
+| `decodeImage`                                                                                      | `/node` | PNG/JPEG bytes → RGB, with limits applied to untrusted uploads |
+| `fromRgbaImageData`                                                                                | root    | Canvas RGBA → RGB, the browser's way in                        |
+| `normaliseToProfile`                                                                               | root    | Crop, zoom, and resize to the profile                          |
+| `coverWindowSize` / `defaultFraming` / `sourceRectFromFraming` / `clampFraming` / `framingPanRoom` | root    | Centre/zoom framing helpers → `sourceRect`; pan-room for UI    |
+| `rotatedImageSize` / `nextSourceRotation`                                                          | root    | Source rotation size + 90° step helper                         |
+| `ingestImageToProfile`                                                                             | `/node` | `decodeImage` + `normaliseToProfile` in one call               |
+| `renderMono`                                                                                       | root    | RGB → 1-bit bitmap via threshold or dithering                  |
+| `packMonoBitmap`                                                                                   | root    | Bitmap → device-ready framebuffer plus metadata                |
+| `toPreviewImage`                                                                                   | root    | Framebuffer → RGBA for a canvas                                |
+| `encodePreviewPng`                                                                                 | `/node` | Preview → PNG file bytes                                       |
+| `crc32Hex`                                                                                         | root    | The checksum firmware verifies against                         |
 
 ### Profiles
 
