@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.2.0...1.3.0) (2026-09-10)
+
+### Features
+
+* [#37](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/37) Pack non-native orientations ([d1714d5](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/d1714d5df117098897c643734a16bf81e259c24a))
+* [#37](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/37) Rotate source before framing ([5a97ff1](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/5a97ff10e3bd761f673693149da107bc5727eb29))
+
+### Bug Fixes
+
+* [#37](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/37) Reject unknown pack orientations ([05e48df](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/05e48dfb5505d599897c3e77225d9a8c03ec6f2a))
+
 ## [1.2.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.1.2...1.2.0) (2026-09-09)
 
 ### Features
