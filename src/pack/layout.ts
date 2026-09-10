@@ -17,7 +17,21 @@ export type PackLayout = {
  * both edges are multiples of 8 (as on Waveshare 800×480).
  */
 export function layoutForOrientation(profile: DisplayProfile): PackLayout {
-  const swapped = profile.orientation === 'rotate-90' || profile.orientation === 'rotate-270';
+  const { orientation } = profile;
+  switch (orientation) {
+    case 'native':
+    case 'rotate-90':
+    case 'rotate-180':
+    case 'rotate-270':
+      break;
+    default:
+      throw new FramebufferPackError(
+        'UNSUPPORTED_ORIENTATION',
+        `orientation ${String(orientation)} is not supported`,
+      );
+  }
+
+  const swapped = orientation === 'rotate-90' || orientation === 'rotate-270';
   const width = swapped ? profile.height : profile.width;
   const height = swapped ? profile.width : profile.height;
 

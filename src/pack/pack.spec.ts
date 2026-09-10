@@ -207,6 +207,22 @@ describe('packMonoBitmap', () => {
     // CW 270: (0,0) → (0, 799) in 480×800 → first bit of the last row.
     assert.equal(packed.bytes[799 * 60], 0x80);
   });
+
+  it('rejects unknown orientations instead of packing a corrupt stride', () => {
+    const source = bitmapOf(() => 1);
+    const bogus = {
+      ...profile,
+      orientation: 'rotate-45' as typeof profile.orientation,
+    };
+    assert.throws(
+      () => packMonoBitmap(source, { profile: bogus }),
+      (error: unknown) => {
+        assert.ok(error instanceof FramebufferPackError);
+        assert.equal(error.code, 'UNSUPPORTED_ORIENTATION');
+        return true;
+      },
+    );
+  });
 });
 
 describe('toPreviewImage', () => {
