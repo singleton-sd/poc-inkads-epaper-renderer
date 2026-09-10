@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.4.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.3.0...1.4.0) (2026-09-10)
+
+### Features
+
+* [#40](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/40) Accept zoom on normaliseToProfile ([9f9e41a](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/9f9e41a6ed800df06cb77f294ed1fc02caba072e))
+* [#40](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/40) Add centre/zoom framing helpers ([73fbd93](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/73fbd930b43b7bb24fc47aa546f4c74d8aa40569))
+
+### Bug Fixes
+
+* [#40](https://github.com/singleton-sd/poc-inkads-epaper-renderer/issues/40) Align clamp zoom and document framing API ([81ca8f1](https://github.com/singleton-sd/poc-inkads-epaper-renderer/commit/81ca8f173ecfa4ad02ff5e17c6c0691e20a57a30))
+
 ## [1.3.0](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.2.0...1.3.0) (2026-09-10)
 
 ### Features

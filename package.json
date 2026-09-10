@@ -1,6 +1,6 @@
 {
   "name": "@singleton-sd/inkads-epaper-renderer",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Converts advertiser artwork into display-ready e-paper framebuffers for InkAds — deterministic crop, dither, and pack for Waveshare 7.5″ B/W panels.",
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
