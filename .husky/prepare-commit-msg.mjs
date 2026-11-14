@@ -39,7 +39,10 @@ try {
   const commitMessage = readFileSync(commitMessageFilePath, 'utf8');
 
   const firstLine = commitMessage.split(/\r?\n/, 1)[0] ?? '';
-  if (/^chore: Release v\d+\.\d+\.\d+$/.test(firstLine)) {
+  if (
+    /^chore: Release v\d+\.\d+\.\d+$/.test(firstLine) ||
+    /^chore\(release\): v\d+\.\d+\.\d+(?: \[skip ci\])?$/.test(firstLine)
+  ) {
     console.info('Skipping ticket number as this is a release commit');
     process.exit(0);
   }

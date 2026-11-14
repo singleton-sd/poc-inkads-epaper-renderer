@@ -35,19 +35,17 @@ Install hooks via `pnpm install` (`prepare` → husky).
 
 ## Releases
 
-All singleton-sd repos use **tag-only releases** (decision 14 Nov 2026).
-The release workflow must never commit or push to the default branch, and
-must not use a ruleset bypass.
+`release-it` bumps semver from Conventional Commits and writes
+`CHANGELOG.md`. Merges to `main` (except `chore(release):` commits)
+trigger `.github/workflows/release.yml`, which runs `pnpm release:ci`:
+version bump + changelog commit on `main`, `X.Y.Z` tag, GitHub Release,
+and npm publish.
 
-`release-it` computes the next semver from the latest `X.Y.Z` tag plus
-Conventional Commits. On merge to `main`, `.github/workflows/release.yml`
-runs `pnpm release:ci`: it bumps `package.json` in the CI workspace only,
-publishes to npm, pushes **only** `refs/tags/<X.Y.Z>` (branch rulesets do
-not apply to tag refs), and opens a GitHub Release with generated notes.
-`CHANGELOG.md` is historical; new notes live on the GitHub Release.
-
-`pnpm release` is a local dry-run (it will not push a tag). Do not edit
-the version in `package.json` by hand.
+The push to `main` is done by the **singleton-release** GitHub App
+(`vars.RELEASE_APP_ID` + `secrets.RELEASE_APP_PRIVATE_KEY`), which is on
+the main ruleset bypass list. Do not use a PAT, and do not fall back to
+`GITHUB_TOKEN` (that is GH013). `pnpm release` is a local dry-run. Do not
+edit the version in `package.json` by hand.
 
 ## Scope
 

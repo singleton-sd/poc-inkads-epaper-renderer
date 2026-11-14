@@ -1,10 +1,5 @@
 # Changelog
 
-Release notes from 14 November 2026 onward live in
-[GitHub Releases](https://github.com/singleton-sd/poc-inkads-epaper-renderer/releases).
-This file is a historical record through 1.4.1 and is no longer updated by
-the release workflow.
-
 ## [1.4.1](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.4.0...1.4.1) (2026-09-10)
 
 ### Bug Fixes

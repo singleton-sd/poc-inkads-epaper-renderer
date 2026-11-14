@@ -27,7 +27,10 @@ module.exports = {
     {
       rules: {
         'ticket-number': ({ header }) => {
-          if (/^chore: Release v\d+\.\d+\.\d+$/.test(header)) {
+          if (
+            /^chore: Release v\d+\.\d+\.\d+$/.test(header) ||
+            /^chore\(release\): v\d+\.\d+\.\d+(?: \[skip ci\])?$/.test(header)
+          ) {
             console.info('Skipping ticket number as this is a release commit');
             return [true];
           }
