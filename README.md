@@ -143,8 +143,16 @@ pnpm release      # dry-run only (no publish, no git push)
 # Off main, add --no-git.requireBranch so requireBranch does not fail.
 ```
 
-The dry-run commits nothing. The `before:github:release` hook skips the tag
-push unless `GITHUB_ACTIONS` is set.
+The dry-run commits nothing, but it can change `package.json` and
+`src/version.ts` in the working tree. Restore them before the next dry run
+or before you commit:
+
+```sh
+git checkout -- package.json src/version.ts
+```
+
+The `before:github:release` hook skips the tag push unless `GITHUB_ACTIONS`
+is set.
 
 Bootstrap / first package creation (interactive, with 2FA):
 
