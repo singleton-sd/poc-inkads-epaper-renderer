@@ -119,7 +119,7 @@ Package → Settings → Trusted publishing → GitHub Actions. If the package d
 After the first successful OIDC publish, consider Package → Settings → Publishing access → **Require two-factor authentication and disallow tokens** so long-lived publish tokens cannot be used.
 
 Requires `release-it` ≥ 19.0.4 (Octokit logger fix for GitHub Releases) and npm
-CLI ≥ 11.5.1. The release workflow pins `npm@11` (not unbounded `@latest`).
+CLI ≥ 11.5.1. The release workflow pins `npm@11.5.1` (not unbounded `@latest`).
 
 Do **not** set `publishConfig.registry`. release-it passes it as one CLI token
 (`--registry https://…`); npm 12 then fails with `EUNKNOWNCONFIG` /

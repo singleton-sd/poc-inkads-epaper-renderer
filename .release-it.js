@@ -11,8 +11,8 @@
  */
 export default {
   git: {
-    commitMessage: 'chore: Release v${version}\n\n[skip ci]',
     tagName: '${version}',
+    tagMatch: '[0-9]*.[0-9]*.[0-9]*',
     requireBranch: 'main',
     requireCleanWorkingDir: true,
     requireCommits: true,

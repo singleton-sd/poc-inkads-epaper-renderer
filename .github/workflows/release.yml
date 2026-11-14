@@ -25,17 +25,17 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
           # Keep the write token out of git config until the Release step.
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 11.22.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: pnpm
@@ -46,18 +46,18 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      # Trusted Publishing needs npm ≥ 11.5.1. Pin to the 11.x line: npm@latest
-      # currently pulls 12.x, and release-it + publishConfig.registry previously
-      # produced a single argv token that npm 12 rejected as --//registry.npmjs.org.
+      # Trusted Publishing needs npm ≥ 11.5.1. Pin exactly: npm@latest currently
+      # pulls 12.x, and release-it + publishConfig.registry previously produced
+      # a single argv token that npm 12 rejected as --//registry.npmjs.org.
       - name: Upgrade npm for OIDC publish
         run: |
           set -euo pipefail
-          npm install -g npm@11
+          npm install -g npm@11.5.1
           npm --version
           # Fail closed if a leftover auth rc would short-circuit OIDC.
+          # Do not print the file: it may contain credentials.
           if [[ -f "$HOME/.npmrc" ]] && grep -qE 'always-auth|^//registry\.npmjs\.org' "$HOME/.npmrc"; then
-            echo "Refusing to publish with an auth .npmrc that Trusted Publishing does not need:" >&2
-            cat "$HOME/.npmrc" >&2
+            echo "Refusing to publish with an auth .npmrc that Trusted Publishing does not need: $HOME/.npmrc" >&2
             exit 1
           fi
 
