@@ -21,13 +21,13 @@ export default {
     commit: true,
     push: true,
     tag: true,
+    pushArgs: ['--follow-tags', '--atomic'],
   },
   npm: {
     publish: true,
     skipChecks: true,
   },
   hooks: {
-    'before:release': 'pnpm lint && pnpm typecheck && pnpm test',
     'after:bump': 'node ./scripts/sync-version.mjs',
   },
   github: {
