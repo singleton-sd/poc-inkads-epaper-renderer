@@ -44,8 +44,15 @@ and npm publish.
 The push to `main` is done by the **singleton-release** GitHub App
 (`vars.RELEASE_APP_ID` + `secrets.RELEASE_APP_PRIVATE_KEY`), which is on
 the main ruleset bypass list. Do not use a PAT, and do not fall back to
-`GITHUB_TOKEN` (that is GH013). `pnpm release` is a local dry-run. Do not
-edit the version in `package.json` by hand.
+`GITHUB_TOKEN` (that is GH013). `pnpm release` is a local dry-run: it
+commits nothing, but it can dirty `package.json`, `src/version.ts`, and
+`CHANGELOG.md`. Restore those files before another dry run or a commit:
+
+```sh
+git checkout -- package.json src/version.ts CHANGELOG.md
+```
+
+Do not edit the version in `package.json` by hand.
 
 ## Scope
 

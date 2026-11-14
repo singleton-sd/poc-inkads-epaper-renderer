@@ -96,13 +96,13 @@ missing — it fails instead.
 
 One-time GitHub setup (org / repo):
 
-| Field               | Value                                                     |
-| ------------------- | --------------------------------------------------------- |
-| GitHub App          | `singleton-release`                                       |
-| Repository variable | `RELEASE_APP_ID`                                          |
-| Repository secret   | `RELEASE_APP_PRIVATE_KEY`                                 |
-| Ruleset bypass      | add `singleton-release` on the `main` ruleset             |
-| Token mint          | `actions/create-github-app-token` (`owner: singleton-sd`) |
+| Field               | Value                                                                                                 |
+| ------------------- | ----------------------------------------------------------------------------------------------------- |
+| GitHub App          | `singleton-release`                                                                                   |
+| Repository variable | `RELEASE_APP_ID`                                                                                      |
+| Repository secret   | `RELEASE_APP_PRIVATE_KEY`                                                                             |
+| Ruleset bypass      | add `singleton-release` on the `main` ruleset                                                         |
+| Token mint          | `actions/create-github-app-token` (`owner: singleton-sd`, `repositories: poc-inkads-epaper-renderer`) |
 
 **Distribution:** public npm at `@singleton-sd/inkads-epaper-renderer`. Scoped
 packages default to private on npm; `publishConfig.access: public` in
