@@ -35,11 +35,19 @@ Install hooks via `pnpm install` (`prepare` → husky).
 
 ## Releases
 
-`release-it` bumps semver from Conventional Commits and writes `CHANGELOG.md`.
-Merges to `main` trigger `.github/workflows/release.yml`, which runs
-`pnpm release:ci` (tag + GitHub Release). `pnpm release` is a local dry-run.
-Do not edit the version in `package.json` by hand. npm publish is disabled
-until the package is ready for a registry.
+All singleton-sd repos use **tag-only releases** (decision 14 Nov 2026).
+The release workflow must never commit or push to the default branch, and
+must not use a ruleset bypass.
+
+`release-it` computes the next semver from the latest `X.Y.Z` tag plus
+Conventional Commits. On merge to `main`, `.github/workflows/release.yml`
+runs `pnpm release:ci`: it bumps `package.json` in the CI workspace only,
+publishes to npm, pushes **only** `refs/tags/<X.Y.Z>` (branch rulesets do
+not apply to tag refs), and opens a GitHub Release with generated notes.
+`CHANGELOG.md` is historical; new notes live on the GitHub Release.
+
+`pnpm release` is a local dry-run (it will not push a tag). Do not edit
+the version in `package.json` by hand.
 
 ## Scope
 

@@ -23,8 +23,10 @@ hardware in #8.
 
 Published to the public npm registry as
 [`@singleton-sd/inkads-epaper-renderer`](https://www.npmjs.com/package/@singleton-sd/inkads-epaper-renderer).
-Each release on `main` bumps the version, tags, updates the changelog, creates a
-GitHub release, and publishes to npm.
+Each merge to `main` publishes a **tag-only** release: the version is computed
+from the latest git tag plus Conventional Commits, npm is published, an
+`X.Y.Z` tag is pushed, and a GitHub Release is created. Nothing is committed
+back to `main`.
 
 ## Installing
 
@@ -72,12 +74,30 @@ filename conventions, and branch names of the form
 
 ## Releases
 
-Semantic versions are produced by `release-it` from Conventional Commits.
+Semantic versions are produced by `release-it` from the latest git tag plus
+Conventional Commits. Tags keep this repo's existing `X.Y.Z` format (for
+example `1.4.1`); GitHub Release titles are `vX.Y.Z`.
 
-On every push to `main` (except an existing `chore: Release …` commit), GitHub
-Actions runs `pnpm release:ci`. That bumps the version, updates `CHANGELOG.md`,
-pushes a semver tag, creates a GitHub Release (notes include the matching npmjs
-version link), and publishes to the public npm registry.
+This is a **tag-only** release (singleton-sd convention, 14 Nov 2026):
+
+- The workflow never commits a version bump or changelog, and never pushes
+  to `main`. There is no ruleset bypass (`GITHUB_TOKEN` cannot bypass the
+  CodeRabbit required ruleset anyway; that was GH013 on marketing).
+- `package.json` and `src/version.ts` are bumped in the CI workspace only so
+  `npm publish` ships the new version. `main` stays at the last committed
+  manifest; the git tag is the source of truth (`npm.ignoreVersion`).
+- Only `refs/tags/<X.Y.Z>` is pushed. Branch rulesets target
+  `refs/heads/*` and do not apply to tag refs, so the tag push is not
+  blocked by "CodeRabbit required" / pull-request rules. Do not add a tag
+  ruleset that requires a PR or CodeRabbit, or tag creation will fail
+  without a bypass — which we will not add.
+- GitHub Release notes are generated from Conventional Commits (plus the
+  npmjs version link). `CHANGELOG.md` remains in the tree as history and is
+  no longer written by the release workflow.
+
+On every push to `main` and on `workflow_dispatch`, GitHub Actions runs
+`pnpm release:ci`. If there are no commits since the latest tag, the job
+exits 0 without cutting a release.
 
 **Distribution:** public npm at `@singleton-sd/inkads-epaper-renderer`. Scoped
 packages default to private on npm; `publishConfig.access: public` in
@@ -120,7 +140,11 @@ Locally:
 
 ```sh
 pnpm release      # dry-run only (no publish, no git push)
+# Off main, add --no-git.requireBranch so requireBranch does not fail.
 ```
+
+The dry-run commits nothing. The `before:github:release` hook skips the tag
+push unless `GITHUB_ACTIONS` is set.
 
 Bootstrap / first package creation (interactive, with 2FA):
 
@@ -128,12 +152,14 @@ Bootstrap / first package creation (interactive, with 2FA):
 pnpm build && npm publish --access public
 ```
 
-Never hand-edit `package.json` version.
+Never hand-edit `package.json` version. On `main` it lags the latest tag by
+design; do not "catch it up" with a version-bump PR.
 
 ### Recovery: tag exists, GitHub Release missing
 
 If CI pushed a semver tag but failed while creating the GitHub Release, **do not**
-rerun `pnpm release:ci` — that can cut another empty version bump.
+rerun `pnpm release:ci` — `requireCommits` then sees no commits since that tag
+and exits 0 without creating the missing Release.
 
 Create the missing Release from the existing tag instead:
 

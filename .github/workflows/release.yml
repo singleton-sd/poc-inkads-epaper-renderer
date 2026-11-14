@@ -9,15 +9,21 @@ concurrency:
   group: release-main
   cancel-in-progress: false
 
+# Least privilege: tags + GitHub Releases (contents) and npm Trusted
+# Publishing (id-token). No PAT, no ruleset bypass. GITHUB_TOKEN cannot
+# push to main under the CodeRabbit required ruleset (GH013); this
+# workflow never tries.
 permissions:
   contents: write
   id-token: write
 
 jobs:
   release:
-    if: "${{ github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore: Release') }}"
     runs-on: ubuntu-latest
     name: release-it
+    permissions:
+      contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -78,7 +84,11 @@ jobs:
           git fetch origin main --tags
           git checkout -B main origin/main
 
-          # Do not retry failed runs: commit/tag/push may already have
-          # succeeded while GitHub release creation failed, and retrying
-          # would cut another empty version bump.
+          # Tag-only: release-it must not git push HEAD/main (branch
+          # rulesets such as "CodeRabbit required" reject that with
+          # GH013, and GITHUB_TOKEN cannot bypass them). The
+          # before:github:release hook pushes refs/tags/<X.Y.Z> only
+          # (after:git:release is skipped when git.push is false).
+          # Do not retry a run that already created the tag: requireCommits
+          # then exits 0, and the GitHub Release would be missing.
           pnpm release:ci
