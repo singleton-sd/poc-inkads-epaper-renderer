@@ -150,12 +150,16 @@ pnpm release      # dry-run only (no publish, no git push)
 ```
 
 The dry-run commits nothing, but it can change `package.json`,
-`src/version.ts`, and `CHANGELOG.md` in the working tree. Restore them
-before the next dry run or before you commit:
+`src/version.ts`, and `CHANGELOG.md` in the working tree. Review those
+diffs before the next dry run or before you commit:
 
 ```sh
-git checkout -- package.json src/version.ts CHANGELOG.md
+git diff -- package.json src/version.ts CHANGELOG.md
+git checkout -p -- package.json src/version.ts CHANGELOG.md
 ```
+
+A plain `git checkout --` of those files discards every unstaged edit
+in them, not only the dry-run bump.
 
 Bootstrap / first package creation (interactive, with 2FA):
 

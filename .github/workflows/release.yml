@@ -53,6 +53,10 @@ jobs:
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           owner: singleton-sd
           repositories: poc-inkads-epaper-renderer
+          # Restrict the installation token: contents covers commits, tags,
+          # and GitHub Releases. Do not omit this or the token inherits every
+          # permission the App installation holds.
+          permission-contents: write
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:

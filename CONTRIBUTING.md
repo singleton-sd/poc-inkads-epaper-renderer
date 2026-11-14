@@ -46,11 +46,15 @@ The push to `main` is done by the **singleton-release** GitHub App
 the main ruleset bypass list. Do not use a PAT, and do not fall back to
 `GITHUB_TOKEN` (that is GH013). `pnpm release` is a local dry-run: it
 commits nothing, but it can dirty `package.json`, `src/version.ts`, and
-`CHANGELOG.md`. Restore those files before another dry run or a commit:
+`CHANGELOG.md`. Review those diffs before another dry run or a commit:
 
 ```sh
-git checkout -- package.json src/version.ts CHANGELOG.md
+git diff -- package.json src/version.ts CHANGELOG.md
+git checkout -p -- package.json src/version.ts CHANGELOG.md
 ```
+
+A plain `git checkout --` of those files discards every unstaged edit
+in them, not only the dry-run bump.
 
 Do not edit the version in `package.json` by hand.
 
