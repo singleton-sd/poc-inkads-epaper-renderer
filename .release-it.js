@@ -13,6 +13,7 @@ export default {
     commitMessage: 'chore(release): v${version} [skip ci]',
     tagName: '${version}',
     tagMatch: '[0-9]*.[0-9]*.[0-9]*',
+    tagExclude: '*[-]*',
     requireBranch: 'main',
     requireCleanWorkingDir: true,
     requireCommits: true,
