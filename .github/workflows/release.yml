@@ -133,8 +133,7 @@ jobs:
           git remote set-url origin \
             "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
-          git fetch origin main --tags
-          git checkout -B main origin/main
+          bash ./scripts/release-sync-validated-main.sh
 
           # Do not retry failed runs: commit/tag/push may already have
           # succeeded while GitHub release creation failed, and retrying
