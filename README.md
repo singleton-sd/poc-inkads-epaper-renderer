@@ -23,8 +23,11 @@ hardware in #8.
 
 Published to the public npm registry as
 [`@singleton-sd/inkads-epaper-renderer`](https://www.npmjs.com/package/@singleton-sd/inkads-epaper-renderer).
-Each release on `main` bumps the version, tags, updates the changelog, creates a
-GitHub release, and publishes to npm.
+Each merge to `main` publishes a release: the version is computed from
+Conventional Commits, `CHANGELOG.md` and the version bump are committed to
+`main`, npm is published, an `X.Y.Z` tag is pushed, and a GitHub Release is
+created. The push uses the **singleton-release** GitHub App (on the main
+ruleset bypass list), not `GITHUB_TOKEN`.
 
 ## Installing
 
@@ -73,11 +76,33 @@ filename conventions, and branch names of the form
 ## Releases
 
 Semantic versions are produced by `release-it` from Conventional Commits.
+Tags keep this repo's existing `X.Y.Z` format (for example `1.4.1`); GitHub
+Release titles are `vX.Y.Z`. The release commit message is
+`chore(release): vX.Y.Z [skip ci]`.
 
-On every push to `main` (except an existing `chore: Release …` commit), GitHub
-Actions runs `pnpm release:ci`. That bumps the version, updates `CHANGELOG.md`,
-pushes a semver tag, creates a GitHub Release (notes include the matching npmjs
-version link), and publishes to the public npm registry.
+On every push to `main` (except a `chore(release):` commit) and on
+`workflow_dispatch`, GitHub Actions runs `pnpm release:ci`. That bumps
+`package.json` / `src/version.ts`, updates `CHANGELOG.md`, commits those
+files to `main`, pushes the `X.Y.Z` tag, creates a GitHub Release (notes
+include the matching npmjs version link), and publishes to npm. If there
+are no commits since the latest tag, the job exits 0 without cutting a
+release.
+
+The push to `main` uses the **singleton-release** GitHub App, which Pato
+adds to the main branch ruleset bypass list. `GITHUB_TOKEN` cannot bypass
+that ruleset (GH013 on marketing). Do **not** use a PAT, and the workflow
+must **not** fall back to `GITHUB_TOKEN` if the app credentials are
+missing — it fails instead.
+
+One-time GitHub setup (org / repo):
+
+| Field               | Value                                                                                                 |
+| ------------------- | ----------------------------------------------------------------------------------------------------- |
+| GitHub App          | `singleton-release`                                                                                   |
+| Repository variable | `RELEASE_APP_ID`                                                                                      |
+| Repository secret   | `RELEASE_APP_PRIVATE_KEY`                                                                             |
+| Ruleset bypass      | add `singleton-release` on the `main` ruleset                                                         |
+| Token mint          | `actions/create-github-app-token` (`owner: singleton-sd`, `repositories: poc-inkads-epaper-renderer`) |
 
 **Distribution:** public npm at `@singleton-sd/inkads-epaper-renderer`. Scoped
 packages default to private on npm; `publishConfig.access: public` in
@@ -99,7 +124,8 @@ Package → Settings → Trusted publishing → GitHub Actions. If the package d
 After the first successful OIDC publish, consider Package → Settings → Publishing access → **Require two-factor authentication and disallow tokens** so long-lived publish tokens cannot be used.
 
 Requires `release-it` ≥ 19.0.4 (Octokit logger fix for GitHub Releases) and npm
-CLI ≥ 11.5.1. The release workflow pins `npm@11` (not unbounded `@latest`).
+CLI ≥ 11.5.1. The release workflow pins `npm@11.5.1` (not unbounded `@latest`).
+GitHub Actions are pinned to commit SHAs.
 
 Do **not** set `publishConfig.registry`. release-it passes it as one CLI token
 (`--registry https://…`); npm 12 then fails with `EUNKNOWNCONFIG` /
@@ -120,7 +146,20 @@ Locally:
 
 ```sh
 pnpm release      # dry-run only (no publish, no git push)
+# Off main, add --no-git.requireBranch so requireBranch does not fail.
 ```
+
+The dry-run commits nothing, but it can change `package.json`,
+`src/version.ts`, and `CHANGELOG.md` in the working tree. Review those
+diffs before the next dry run or before you commit:
+
+```sh
+git diff -- package.json src/version.ts CHANGELOG.md
+git checkout -p -- package.json src/version.ts CHANGELOG.md
+```
+
+A plain `git checkout --` of those files discards every unstaged edit
+in them, not only the dry-run bump.
 
 Bootstrap / first package creation (interactive, with 2FA):
 
@@ -133,7 +172,8 @@ Never hand-edit `package.json` version.
 ### Recovery: tag exists, GitHub Release missing
 
 If CI pushed a semver tag but failed while creating the GitHub Release, **do not**
-rerun `pnpm release:ci` — that can cut another empty version bump.
+rerun `pnpm release:ci` — `requireCommits` then sees no commits since that tag
+and exits 0 without creating the missing Release.
 
 Create the missing Release from the existing tag instead:
 
