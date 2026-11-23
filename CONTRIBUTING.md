@@ -35,11 +35,28 @@ Install hooks via `pnpm install` (`prepare` → husky).
 
 ## Releases
 
-`release-it` bumps semver from Conventional Commits and writes `CHANGELOG.md`.
-Merges to `main` trigger `.github/workflows/release.yml`, which runs
-`pnpm release:ci` (tag + GitHub Release). `pnpm release` is a local dry-run.
-Do not edit the version in `package.json` by hand. npm publish is disabled
-until the package is ready for a registry.
+`release-it` bumps semver from Conventional Commits and writes
+`CHANGELOG.md`. Merges to `main` (except `chore(release):` commits)
+trigger `.github/workflows/release.yml`, which runs `pnpm release:ci`:
+version bump + changelog commit on `main`, `X.Y.Z` tag, GitHub Release,
+and npm publish.
+
+The push to `main` is done by the **singleton-release** GitHub App
+(`vars.RELEASE_APP_ID` + `secrets.RELEASE_APP_PRIVATE_KEY`), which is on
+the main ruleset bypass list. Do not use a PAT, and do not fall back to
+`GITHUB_TOKEN` (that is GH013). `pnpm release` is a local dry-run: it
+commits nothing, but it can dirty `package.json`, `src/version.ts`, and
+`CHANGELOG.md`. Review those diffs before another dry run or a commit:
+
+```sh
+git diff -- package.json src/version.ts CHANGELOG.md
+git checkout -p -- package.json src/version.ts CHANGELOG.md
+```
+
+A plain `git checkout --` of those files discards every unstaged edit
+in them, not only the dry-run bump.
+
+Do not edit the version in `package.json` by hand.
 
 ## Scope
 
