@@ -1,5 +1,7 @@
 # Changelog
 
+## [1.4.2](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.4.1...1.4.2) (2026-11-23)
+
 ## [1.4.1](https://github.com/singleton-sd/poc-inkads-epaper-renderer/compare/1.4.0...1.4.1) (2026-09-10)
 
 ### Bug Fixes
