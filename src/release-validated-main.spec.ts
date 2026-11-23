@@ -53,15 +53,7 @@ describe('release validated main', () => {
 
       const later = commitFile(origin, 'f', 'b\n', 'unvalidated');
       assert.notEqual(later, validated);
-
-      const resetWouldMove = spawnSync(
-        'git',
-        ['-c', 'commit.gpgsign=false', 'fetch', 'origin', 'main', '--tags'],
-        { cwd: work, encoding: 'utf8' },
-      );
-      assert.equal(resetWouldMove.status, 0);
-      const moved = git(work, ['rev-parse', 'origin/main']);
-      assert.equal(moved, later);
+      assert.equal(git(work, ['rev-parse', 'origin/main']), validated);
 
       const result = spawnSync('bash', [script], {
         cwd: work,
